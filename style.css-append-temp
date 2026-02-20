@@ -1,0 +1,102 @@
+
+/* Featured Products Section */
+.featured-products {
+    background-color: var(--light-gray);
+    padding: 3rem 0;
+}
+
+.products-grid-featured {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.product-card-featured {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.product-card-featured:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+}
+
+.product-image-container {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.product-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-grow: 1;
+}
+
+.product-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    line-height: 1.4;
+    min-height: 2.8em; /* Force roughly 2 lines height alignment */
+}
+
+.product-price-box {
+    margin: 0.5rem 0;
+}
+
+.old-price {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--medium-gray);
+    text-decoration: line-through;
+    margin-bottom: 0.25rem;
+}
+
+.current-price {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--dark-gray); /* Using dark gray for price/black vibe from reference */
+    text-decoration: underline;
+    text-decoration-color: var(--dark-gray);
+    text-underline-offset: 4px;
+}
+
+.add-to-cart-btn {
+    background-color: #00609C; /* Blue palette as requested */
+    color: var(--white);
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    text-transform: uppercase;
+    margin-top: auto;
+}
+
+.add-to-cart-btn:hover {
+    background-color: var(--primary-blue);
+}

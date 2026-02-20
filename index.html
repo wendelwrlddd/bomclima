@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOM CLIMA - Ar Condicionado Automotivo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container top-bar-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="wpp-icon"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>
+            <span>Agilize seu atendimento pelo nosso WhatsApp!</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <img src="./assets/logo.png" alt="Bom Clima Ar Condicionado" class="logo-img">
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active animate__animated animate__backInDown">Início</a>
+                <a href="#products" class="nav-link animate__animated animate__backInDown">Produtos</a>
+                <a href="#categories" class="nav-link animate__animated animate__backInDown">Categorias</a>
+                <a href="#contact" class="nav-link animate__animated animate__backInDown">Contato</a>
+            </nav>
+            <div class="header-actions">
+                <button class="cart-btn">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="mobile-menu-btn">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-slider">
+            <div class="hero-slider-inner">
+                <div class="hero-slide active">
+                    <img src="./assets/hero-banner.png" alt="Bom Clima Banner 1" class="hero-banner-main">
+                </div>
+                <div class="hero-slide">
+                    <img src="./assets/hero-banner-2.png" alt="Bom Clima Banner 2" class="hero-banner-main">
+                </div>
+            </div>
+            
+            <!-- Navigation Arrows -->
+            <button class="hero-nav prev" aria-label="Anterior">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="hero-nav next" aria-label="Próximo">
+                <i data-lucide="chevron-right"></i>
+            </button>
+            
+            <!-- Pagination Dots -->
+            <div class="hero-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions Bar -->
+    <section class="quick-actions">
+        <div class="container quick-actions-container">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="0">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Fire/3D/fire_3d.png" alt="Em Breve" class="action-img-3d">
+                </div>
+                <span class="action-text">Em Breve</span>
+            </div>
+            <div class="action-item" data-aos="fade-up" data-aos-delay="100">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Ticket/3D/ticket_3d.png" alt="Em Breve" class="action-img-3d">
+                </div>
+                <span class="action-text">Em Breve</span>
+            </div>
+            <div class="action-item" data-aos="fade-up" data-aos-delay="200">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Star/3D/star_3d.png" alt="Mais Vendidos" class="action-img-3d">
+                </div>
+                <span class="action-text">Mais Vendidos</span>
+            </div>
+            <div class="action-item" data-aos="fade-up" data-aos-delay="300">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clipboard/3D/clipboard_3d.png" alt="Checklist Mecânico" class="action-img-3d">
+                </div>
+                <span class="action-text">Checklist Mecânico</span>
+            </div>
+            <div class="action-item" data-aos="fade-up" data-aos-delay="400">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Droplet/3D/droplet_3d.png" alt="Carga de Gás e Óleo" class="action-img-3d">
+                </div>
+                <span class="action-text">Carga de Gás e Óleo</span>
+            </div>
+            <div class="action-item" data-aos="fade-up" data-aos-delay="500">
+                <div class="action-icon-wrapper">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Bell/3D/bell_3d.png" alt="Redes Sociais" class="action-img-3d">
+                </div>
+                <span class="action-text">Redes Sociais</span>
+            </div>
+        </div>
+    </section>
+
+        <!-- Product Details Section (Hidden by default) -->
+    <section id="product-details" class="product-details-section" style="display: none;">
+        <div class="container product-details-container">
+            <div class="back-link-wrapper">
+                <a href="javascript:void(0)" class="back-link" onclick="closeProductDetails()">
+                    <i data-lucide="arrow-left"></i> Voltar para Produtos
+                </a>
+            </div>
+            <div class="product-details-content">
+                <div class="product-details-image">
+                    <img id="detail-image" src="" alt="Produto">
+                </div>
+                <div class="product-details-info">
+                    <span id="detail-category" class="detail-category">Categoria</span>
+                    <h2 id="detail-title" class="detail-title">Nome do Produto</h2>
+                    <div id="detail-rating" class="detail-rating"></div>
+                    <p id="detail-price" class="detail-price">R$ 0,00</p>
+                    <p id="detail-description" class="detail-description">
+                        Descrição detalhada do produto aparecerá aqui. 
+                        Peças de alta performance com garantia e procedência.
+                    </p>
+                    <div class="specifications">
+                        <h3>Especificações Técnicas</h3>
+                        <ul id="detail-specs">
+                            <li><i data-lucide="check"></i> Material: Aço Inoxidável</li>
+                            <li><i data-lucide="check"></i> Garantia: 12 Meses</li>
+                            <li><i data-lucide="check"></i> Compatibilidade: Universal</li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-primary btn-large" onclick="placeOrder()">
+                        Realizar Pedido <i data-lucide="whatsapp"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container main-content-wrapper">
+            <h2 class="section-title">TUDO EM AR CONDICIONADO AUTOMOTIVO</h2>
+            <div class="featured-slider-container">
+                <button class="slider-arrow prev" aria-label="Anterior">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                
+                <div class="products-grid-featured">
+                    <!-- Product 1 -->
+                    <div class="product-card-featured" data-aos="fade-up">
+                        <div class="product-image-container">
+                            <img src="./assets/compressor-1.png" alt="Compressor Mahle" class="product-img">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">COMPRESSOR MAHLE MOTOR 1.4 L 8V SOHC L4 FIRE EVO FIORINO</h3>
+                            <div class="product-price-box">
+                                <span class="old-price">R$ 2.050,00</span>
+                                <span class="current-price">R$ 1.500,00</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(1)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
+                        </div>
+                    </div>
+
+                    <!-- Product 2 -->
+                    <div class="product-card-featured" data-aos="fade-up">
+                        <div class="product-image-container">
+                            <img src="./assets/compressor-2.png" alt="Compressor Hyundai Tucson" class="product-img">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">COMPRESSOR AC P/ HYUNDAI TUCSON GLS 2.0 2010 A 2015</h3>
+                            <div class="product-price-box">
+                                <span class="old-price">R$ 1.800,00</span>
+                                <span class="current-price">R$ 1.776,00</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(2)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
+                        </div>
+                    </div>
+
+                    <!-- Product 3 -->
+                    <div class="product-card-featured" data-aos="fade-up">
+                        <div class="product-image-container">
+                            <img src="./assets/compressor-3.png" alt="Compressor Nissan Kicks" class="product-img">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">COMPRESSOR AR NISSAN KICKS/MARCH/VERSA</h3>
+                            <div class="product-price-box">
+                                <span class="old-price">R$ 1.500,00</span>
+                                <span class="current-price">R$ 1.468,00</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(3)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
+                        </div>
+                    </div>
+
+                    <!-- Product 4 -->
+                    <div class="product-card-featured" data-aos="fade-up">
+                        <div class="product-image-container">
+                            <img src="./assets/compressor-2.png" alt="Compressor Audi A3" class="product-img">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">COMPRESSOR AUDI A3; VOLKSWAGEN GOLF, VIRTUS, AMAROK</h3>
+                            <div class="product-price-box">
+                                <span class="old-price">R$ 2.600,00</span>
+                                <span class="current-price">R$ 2.500,00</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(2)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="slider-arrow next" aria-label="Próximo">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="view-all-container">
+                <a href="#products" class="btn-view-all">Ver todos <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 5px;"></i></a>
+            </div>
+
+            <!-- Promo Images Section -->
+            <div class="promo-images-container">
+                <div class="promo-image-wrapper" data-aos="flip-up">
+                    <img src="./assets/promo-banner-1.png" alt="Promoção 1">
+                </div>
+                <div class="promo-map-wrapper" data-aos="flip-up">
+                    <div class="promo-info-row">
+                        <img src="./assets/store-facade.jpg" alt="Fachada da Loja" class="info-img-facade">
+                        <img src="./assets/store-rating.png" alt="Avaliação Google" class="info-img-rating">
+                    </div>
+                    <div class="map-container">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3868.123456789!2d-39.2789012!3d-14.7901234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7390f7a7a7a7a7a7%3A0x7a7a7a7a7a7a7a7a!2sR.%20S%C3%A3o%20Pedro%2C%2044%20-%20Alto%20Maron%2C%20Itabuna%20-%20BA!5e0!3m2!1spt-BR!2sbr!4v1700000000000!5m2!1spt-BR!2sbr" 
+                            width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Products Section -->
+            <div class="container" style="margin-top: 5rem;">
+                <h2 class="section-title">TUDO EM AR CONDICIONADO AUTOMOTIVO</h2>
+                <div class="featured-slider-container">
+                    <button class="slider-arrow prev" aria-label="Anterior">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    
+                    <div class="products-grid-featured">
+                        <!-- Product 1 -->
+                        <div class="product-card-featured" data-aos="fade-up">
+                            <div class="product-image-container">
+                                <img src="./assets/compressor-1.png" alt="Compressor Mahle" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">COMPRESSOR MAHLE MOTOR 1.4 L 8V SOHC L4 FIRE EVO FIORINO</h3>
+                                <div class="product-price-box">
+                                    <span class="old-price">R$ 2.050,00</span>
+                                    <span class="current-price">R$ 1.500,00</span>
+                                </div>
+                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
+                            </div>
+                        </div>
+
+                        <!-- Product 2 -->
+                        <div class="product-card-featured" data-aos="fade-up">
+                            <div class="product-image-container">
+                                <img src="./assets/compressor-2.png" alt="Compressor Hyundai Tucson" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">COMPRESSOR AC P/ HYUNDAI TUCSON GLS 2.0 2010 A 2015</h3>
+                                <div class="product-price-box">
+                                    <span class="old-price">R$ 1.800,00</span>
+                                    <span class="current-price">R$ 1.776,00</span>
+                                </div>
+                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
+                            </div>
+                        </div>
+
+                        <!-- Product 3 -->
+                        <div class="product-card-featured" data-aos="fade-up">
+                            <div class="product-image-container">
+                                <img src="./assets/compressor-3.png" alt="Compressor Nissan Kicks" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">COMPRESSOR AR NISSAN KICKS/MARCH/VERSA</h3>
+                                <div class="product-price-box">
+                                    <span class="old-price">R$ 1.500,00</span>
+                                    <span class="current-price">R$ 1.468,00</span>
+                                </div>
+                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
+                            </div>
+                        </div>
+
+                        <!-- Product 4 -->
+                        <div class="product-card-featured" data-aos="fade-up">
+                            <div class="product-image-container">
+                                <img src="./assets/compressor-2.png" alt="Compressor Audi A3" class="product-img">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">COMPRESSOR AUDI A3; VOLKSWAGEN GOLF, VIRTUS, AMAROK</h3>
+                                <div class="product-price-box">
+                                    <span class="old-price">R$ 2.600,00</span>
+                                    <span class="current-price">R$ 2.500,00</span>
+                                </div>
+                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="slider-arrow next" aria-label="Próximo">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="view-all-container">
+                    <a href="#products" class="btn-view-all">Ver todos <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 5px;"></i></a>
+                </div>
+            </div>
+
+
+            <!-- Partner Brands Section -->
+            <div class="partner-brands" data-aos="fade-down-right">
+                <h3 class="section-subtitle">Marcas Parceiras</h3>
+                <div class="partners-grid-top">
+                    <div class="partner-banner">
+                        <img src="./assets/partner-banner-1.png" alt="Partner Banner 1">
+                    </div>
+                    <div class="partner-banner">
+                        <img src="./assets/partner-banner-2.png" alt="Partner Banner 2">
+                    </div>
+                </div>
+                <div class="partners-grid-bottom">
+                    <div class="partner-logo">
+                        <img src="./assets/partner-logo-1.png" alt="Partner Logo 1">
+                    </div>
+                    <div class="partner-logo">
+                        <img src="./assets/partner-logo-2.png" alt="Partner Logo 2">
+                    </div>
+                    <div class="partner-logo">
+                        <img src="./assets/partner-logo-3.png" alt="Partner Logo 3">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories" id="categories">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">Categorias Populares</h2>
+                <div class="section-line"></div>
+            </div>
+            <div class="categories-grid">
+                <!-- Javascript will populate this or hardcode for now -->
+                <div class="category-card">
+                    <i data-lucide="disc" class="cat-icon"></i>
+                    <h3>Pneus & Rodas</h3>
+                    <p>Performance e aderência</p>
+                </div>
+                <div class="category-card">
+                    <i data-lucide="battery-charging" class="cat-icon"></i>
+                    <h3>Baterias</h3>
+                    <p>Energia confiável</p>
+                </div>
+                <div class="category-card">
+                    <i data-lucide="wrench" class="cat-icon"></i>
+                    <h3>Ferramentas</h3>
+                    <p>Para sua oficina</p>
+                </div>
+                <div class="category-card">
+                    <i data-lucide="droplet" class="cat-icon"></i>
+                    <h3>Óleos & Fluidos</h3>
+                    <p>Manutenção essencial</p>
+                </div>
+                <div class="category-card">
+                    <i data-lucide="settings" class="cat-icon"></i>
+                    <h3>Peças Mecânicas</h3>
+                    <p>Motor e suspensão</p>
+                </div>
+                <div class="category-card">
+                    <i data-lucide="search" class="cat-icon"></i>
+                    <h3>Acessórios</h3>
+                    <p>Estilo e conforto</p>
+                </div>
+            </div>
+        </div>
+        <div class="categories-bg-shape"></div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <div class="container">
+             <div class="products-header">
+                <h2 class="section-title">Nossos Produtos</h2>
+                <div class="products-tabs">
+                    <button class="tab-btn active" data-tab="popular">Populares</button>
+                    <button class="tab-btn" data-tab="featured">Destaques</button>
+                    <button class="tab-btn" data-tab="new">Novos</button>
+                </div>
+            </div>
+            
+            <div class="products-grid active" id="popular">
+                <!-- Product content will go here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Banner Brands Slider -->
+    <section class="brands-banner">
+        <div class="hero-slider brands-slider">
+            <div class="hero-slider-inner">
+                <div class="hero-slide active">
+                    <img src="./assets/hero-banner.png" alt="Bom Clima Banner 1" class="hero-banner-main">
+                </div>
+                <div class="hero-slide">
+                    <img src="./assets/hero-banner-2.png" alt="Bom Clima Banner 2" class="hero-banner-main">
+                </div>
+            </div>
+            
+            <!-- Navigation Arrows -->
+            <button class="hero-nav prev" aria-label="Anterior">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="hero-nav next" aria-label="Próximo">
+                <i data-lucide="chevron-right"></i>
+            </button>
+            
+            <!-- Pagination Dots -->
+            <div class="hero-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" data-aos="fade-up">
+        <div class="footer-top-line"></div>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <div class="logo">
+                     <span class="logo-text white">BOM CLIMA</span>
+                </div>
+                <p>Sua loja de confiança para peças e acessórios automotivos de alta performance.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="#">Início</a></li>
+                    <li><a href="#">Produtos</a></li>
+                    <li><a href="#">Sobre Nós</a></li>
+                    <li><a href="#">Contato</a></li>
+                </ul>
+            </div>
+             <div class="footer-col">
+                <h4>Contato</h4>
+                <ul>
+                    <li><i data-lucide="phone"></i> (73) 8120-3737</li>
+                    <li><i data-lucide="mail"></i> atendimento@bomclima.top</li>
+                    <li><i data-lucide="map-pin"></i> R. São Pedro, 44 - Alto Maron, Itabuna - BA</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Redes Sociais</h4>
+                <div class="social-icons">
+                    <a href="#"><i data-lucide="facebook"></i></a>
+                    <a href="#"><i data-lucide="instagram"></i></a>
+                    <a href="#"><i data-lucide="twitter"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BOM CLIMA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/557381203737" class="whatsapp-float" target="_blank" rel="noopener noreferrer">
+        <span class="whatsapp-tooltip">nos mande uma mensagem</span>
+        <i data-lucide="message-circle" class="whatsapp-icon"></i>
+    </a>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script type="module" src="./script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
