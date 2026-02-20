@@ -570,17 +570,23 @@ class Dashboard {
         }
         
         let totalValue = 0;
-        this.products.forEach(p => {
-            // Excluir sob encomenda e fora de estoque do cálculo de valor total
-            if (p.stockStatus === 'onbackorder' || p.stockStatus === 'outofstock') return;
+        console.log('Calculando estatísticas de estoque...');
 
+        this.products.forEach(p => {
             const qty = parseFloat(p.stock) || 0;
-            if (qty > 0) {
-                // Usar preço promocional se disponível, senão preço regular
-                const priceToUse = (p.promoPrice && p.promoPrice !== '0,00') ? p.promoPrice : p.price;
-                const numericPrice = parseFloat(priceToUse.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-                totalValue += (qty * numericPrice);
-            }
+            const status = (p.stockStatus || '').toLowerCase();
+
+            // Ignorar se estoque for 0 ou se estiver marcado como fora de estoque/encomenda
+            if (qty <= 0 || status === 'onbackorder' || status === 'outofstock') return;
+
+            // Escolher o preço (promocional tem prioridade se for válido)
+            const priceToUse = (p.promoPrice && p.promoPrice !== '0,00' && p.promoPrice !== '') ? p.promoPrice : p.price;
+            if (!priceToUse) return;
+
+            // Converter preço brasileiro em número (ex: R$ 1.500,00 -> 1500.00)
+            const numericPrice = parseFloat(priceToUse.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+            
+            totalValue += (qty * numericPrice);
         });
 
         const stockEl = document.getElementById('stockTotalValue');
