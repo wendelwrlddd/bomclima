@@ -34,10 +34,14 @@
                 <a href="#categories" class="nav-link animate__animated animate__backInDown">Categorias</a>
                 <a href="#contact" class="nav-link animate__animated animate__backInDown">Contato</a>
             </nav>
+            <div class="header-search">
+                <i data-lucide="search"></i>
+                <input type="text" id="global-search" placeholder="Pesquisar produtos...">
+            </div>
             <div class="header-actions">
-                <button class="cart-btn">
+                <button class="cart-btn" onclick="toggleCartSidebar()">
                     <i data-lucide="shopping-cart"></i>
-                    <span class="cart-count">0</span>
+                    <span class="cart-count" id="header-cart-count">0</span>
                 </button>
                 <button class="mobile-menu-btn">
                     <i data-lucide="menu"></i>
@@ -77,37 +81,31 @@
     <!-- Quick Actions Bar -->
     <section class="quick-actions">
         <div class="container quick-actions-container">
-            <div class="action-item" data-aos="fade-up" data-aos-delay="0">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="0" onclick="showBackorderSection()" style="cursor: pointer;">
                 <div class="action-icon-wrapper">
-                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Fire/3D/fire_3d.png" alt="Em Breve" class="action-img-3d">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Fire/3D/fire_3d.png" alt="Sob Encomenda" class="action-img-3d">
                 </div>
                 <span class="action-text">Em Breve</span>
             </div>
-            <div class="action-item" data-aos="fade-up" data-aos-delay="100">
-                <div class="action-icon-wrapper">
-                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Ticket/3D/ticket_3d.png" alt="Em Breve" class="action-img-3d">
-                </div>
-                <span class="action-text">Em Breve</span>
-            </div>
-            <div class="action-item" data-aos="fade-up" data-aos-delay="200">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="200" onclick="scrollToFeatured()" style="cursor: pointer;">
                 <div class="action-icon-wrapper">
                     <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Star/3D/star_3d.png" alt="Mais Vendidos" class="action-img-3d">
                 </div>
                 <span class="action-text">Mais Vendidos</span>
             </div>
-            <div class="action-item" data-aos="fade-up" data-aos-delay="300">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="300" onclick="openChecklistWhatsApp()" style="cursor: pointer;">
                 <div class="action-icon-wrapper">
                     <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clipboard/3D/clipboard_3d.png" alt="Checklist Mecânico" class="action-img-3d">
                 </div>
                 <span class="action-text">Checklist Mecânico</span>
             </div>
-            <div class="action-item" data-aos="fade-up" data-aos-delay="400">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="400" onclick="filterByEvaporador()" style="cursor: pointer;">
                 <div class="action-icon-wrapper">
-                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Droplet/3D/droplet_3d.png" alt="Carga de Gás e Óleo" class="action-img-3d">
+                    <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Droplet/3D/droplet_3d.png" alt="Evaporador" class="action-img-3d">
                 </div>
-                <span class="action-text">Carga de Gás e Óleo</span>
+                <span class="action-text">Evaporador</span>
             </div>
-            <div class="action-item" data-aos="fade-up" data-aos-delay="500">
+            <div class="action-item" data-aos="fade-up" data-aos-delay="500" onclick="scrollToContact()" style="cursor: pointer;">
                 <div class="action-icon-wrapper">
                     <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Bell/3D/bell_3d.png" alt="Redes Sociais" class="action-img-3d">
                 </div>
@@ -145,9 +143,14 @@
                             <li><i data-lucide="check"></i> Compatibilidade: Universal</li>
                         </ul>
                     </div>
-                    <button class="btn btn-primary btn-large" onclick="placeOrder()">
-                        Realizar Pedido <i data-lucide="whatsapp"></i>
-                    </button>
+                    <div class="product-actions" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                        <button class="btn btn-secondary btn-large" onclick="addToCartCurrentProduct()" style="background-color: #F3F4F6; color: #1F2937; border: 2px solid #E5E7EB;">
+                            Adicionar ao Carrinho <i data-lucide="shopping-cart" style="width: 18px; margin-left: 8px;"></i>
+                        </button>
+                        <button class="btn btn-primary btn-large" onclick="placeOrder()">
+                            Comprar Agora (WhatsApp) <i data-lucide="message-circle" style="width: 18px; margin-left: 8px;"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -160,66 +163,8 @@
                     <i data-lucide="chevron-left"></i>
                 </button>
                 
-                <div class="products-grid-featured">
-                    <!-- Product 1 -->
-                    <div class="product-card-featured" data-aos="fade-up">
-                        <div class="product-image-container">
-                            <img src="./assets/compressor-1.png" alt="Compressor Mahle" class="product-img">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-name">COMPRESSOR MAHLE MOTOR 1.4 L 8V SOHC L4 FIRE EVO FIORINO</h3>
-                            <div class="product-price-box">
-                                <span class="old-price">R$ 2.050,00</span>
-                                <span class="current-price">R$ 1.500,00</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(1)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
-                        </div>
-                    </div>
-
-                    <!-- Product 2 -->
-                    <div class="product-card-featured" data-aos="fade-up">
-                        <div class="product-image-container">
-                            <img src="./assets/compressor-2.png" alt="Compressor Hyundai Tucson" class="product-img">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-name">COMPRESSOR AC P/ HYUNDAI TUCSON GLS 2.0 2010 A 2015</h3>
-                            <div class="product-price-box">
-                                <span class="old-price">R$ 1.800,00</span>
-                                <span class="current-price">R$ 1.776,00</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(2)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
-                        </div>
-                    </div>
-
-                    <!-- Product 3 -->
-                    <div class="product-card-featured" data-aos="fade-up">
-                        <div class="product-image-container">
-                            <img src="./assets/compressor-3.png" alt="Compressor Nissan Kicks" class="product-img">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-name">COMPRESSOR AR NISSAN KICKS/MARCH/VERSA</h3>
-                            <div class="product-price-box">
-                                <span class="old-price">R$ 1.500,00</span>
-                                <span class="current-price">R$ 1.468,00</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(3)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
-                        </div>
-                    </div>
-
-                    <!-- Product 4 -->
-                    <div class="product-card-featured" data-aos="fade-up">
-                        <div class="product-image-container">
-                            <img src="./assets/compressor-2.png" alt="Compressor Audi A3" class="product-img">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-name">COMPRESSOR AUDI A3; VOLKSWAGEN GOLF, VIRTUS, AMAROK</h3>
-                            <div class="product-price-box">
-                                <span class="old-price">R$ 2.600,00</span>
-                                <span class="current-price">R$ 2.500,00</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm" onclick="showProductDetails(2)" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">Ver Detalhes</button>
-                        </div>
-                    </div>
+                <div class="products-grid-featured" id="featured-products-grid">
+                    <!-- Dynamic Featured Products -->
                 </div>
 
                 <button class="slider-arrow next" aria-label="Próximo">
@@ -230,6 +175,58 @@
             <div class="view-all-container">
                 <a href="#products" class="btn-view-all">Ver todos <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 5px;"></i></a>
             </div>
+
+            <!-- Services & Reliability Section -->
+            <section class="services-info" id="services" style="margin-bottom: 4rem;">
+                <div class="container services-grid">
+                    <!-- First Column: Atendimento -->
+                    <div class="service-card" data-aos="fade-right" data-aos-duration="1000">
+                        <div class="service-image-wrapper">
+                            <img src="./images/atendimento.jpg" alt="Atendimento Bom Clima" class="service-img">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">Atendimento Ágil e Responsável</h3>
+                            <p class="service-description">
+                                Na Bom Clima, priorizamos a agilidade no atendimento sem abrir mão da responsabilidade. 
+                                Com mais de 10 anos de experiência, nossa empresa garante a confiança que você e seu veículo merecem.
+                            </p>
+                            <a href="https://wa.me/557381203737" target="_blank" class="btn btn-primary service-btn">
+                                Entrar em Contato <i data-lucide="message-circle" style="width: 18px; margin-left: 8px;"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Second Column: Manutenção -->
+                    <div class="service-card" data-aos="fade-left" data-aos-duration="1000">
+                        <div class="service-image-wrapper">
+                            <img src="./images/manutencao.jpg" alt="Manutenção e Conserto" class="service-img">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">Oficina Completa: Peças e Serviços</h3>
+                            <p class="service-description">
+                                Além de sermos referência em auto peças para ar condicionado automotivo, nossa oficina oferece conserto e manutenção especializada. 
+                                Deixe o cuidado com seu ar nas mãos de quem realmente entende do assunto.
+                            </p>
+                            <a href="https://wa.me/557381203737" target="_blank" class="btn btn-secondary service-btn">
+                                Agendar Manutenção <i data-lucide="wrench" style="width: 18px; margin-left: 8px;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Categorias Populares (Moved here) -->
+            <section class="categories" id="categories" style="padding: 2rem 0; margin-top: 2rem;">
+                <div class="container">
+                    <div class="section-header" data-aos="fade-up">
+                        <h2 class="section-title">Categorias Populares</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="categories-grid" id="dynamic-categories-grid">
+                        <!-- Javascript will populate this -->
+                    </div>
+                </div>
+            </section>
 
             <!-- Promo Images Section -->
             <div class="promo-images-container">
@@ -258,66 +255,8 @@
                         <i data-lucide="chevron-left"></i>
                     </button>
                     
-                    <div class="products-grid-featured">
-                        <!-- Product 1 -->
-                        <div class="product-card-featured" data-aos="fade-up">
-                            <div class="product-image-container">
-                                <img src="./assets/compressor-1.png" alt="Compressor Mahle" class="product-img">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">COMPRESSOR MAHLE MOTOR 1.4 L 8V SOHC L4 FIRE EVO FIORINO</h3>
-                                <div class="product-price-box">
-                                    <span class="old-price">R$ 2.050,00</span>
-                                    <span class="current-price">R$ 1.500,00</span>
-                                </div>
-                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
-                            </div>
-                        </div>
-
-                        <!-- Product 2 -->
-                        <div class="product-card-featured" data-aos="fade-up">
-                            <div class="product-image-container">
-                                <img src="./assets/compressor-2.png" alt="Compressor Hyundai Tucson" class="product-img">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">COMPRESSOR AC P/ HYUNDAI TUCSON GLS 2.0 2010 A 2015</h3>
-                                <div class="product-price-box">
-                                    <span class="old-price">R$ 1.800,00</span>
-                                    <span class="current-price">R$ 1.776,00</span>
-                                </div>
-                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
-                            </div>
-                        </div>
-
-                        <!-- Product 3 -->
-                        <div class="product-card-featured" data-aos="fade-up">
-                            <div class="product-image-container">
-                                <img src="./assets/compressor-3.png" alt="Compressor Nissan Kicks" class="product-img">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">COMPRESSOR AR NISSAN KICKS/MARCH/VERSA</h3>
-                                <div class="product-price-box">
-                                    <span class="old-price">R$ 1.500,00</span>
-                                    <span class="current-price">R$ 1.468,00</span>
-                                </div>
-                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
-                            </div>
-                        </div>
-
-                        <!-- Product 4 -->
-                        <div class="product-card-featured" data-aos="fade-up">
-                            <div class="product-image-container">
-                                <img src="./assets/compressor-2.png" alt="Compressor Audi A3" class="product-img">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">COMPRESSOR AUDI A3; VOLKSWAGEN GOLF, VIRTUS, AMAROK</h3>
-                                <div class="product-price-box">
-                                    <span class="old-price">R$ 2.600,00</span>
-                                    <span class="current-price">R$ 2.500,00</span>
-                                </div>
-                                <button class="add-to-cart-btn">Adicionar ao carrinho</button>
-                            </div>
-                        </div>
+                    <div class="products-grid-featured" id="sale-products-grid">
+                        <!-- Dynamic Sale Products -->
                     </div>
 
                     <button class="slider-arrow next" aria-label="Próximo">
@@ -325,9 +264,17 @@
                     </button>
                 </div>
 
-                <div class="view-all-container">
-                    <a href="#products" class="btn-view-all">Ver todos <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 5px;"></i></a>
+            <!-- Seção de Produtos Sob Encomenda (Backorder) -->
+            <div id="backorder-section" class="container" style="display: none; margin-top: 5rem;">
+                <h2 class="section-title">EM BREVE (Sob Encomenda)</h2>
+                <div class="products-grid-backorder" id="backorder-products-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                    <!-- Javascript will populate 3 items per row -->
                 </div>
+            </div>
+
+            <div class="view-all-container" id="backorder-view-all" style="display: none;">
+                <a href="#products" class="btn-view-all">Ver todos <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 5px;"></i></a>
+            </div>
             </div>
 
 
@@ -360,48 +307,6 @@
     </section>
 
     <!-- Categories Section -->
-    <section class="categories" id="categories">
-        <div class="container">
-            <div class="section-header" data-aos="fade-up">
-                <h2 class="section-title">Categorias Populares</h2>
-                <div class="section-line"></div>
-            </div>
-            <div class="categories-grid">
-                <!-- Javascript will populate this or hardcode for now -->
-                <div class="category-card">
-                    <i data-lucide="disc" class="cat-icon"></i>
-                    <h3>Pneus & Rodas</h3>
-                    <p>Performance e aderência</p>
-                </div>
-                <div class="category-card">
-                    <i data-lucide="battery-charging" class="cat-icon"></i>
-                    <h3>Baterias</h3>
-                    <p>Energia confiável</p>
-                </div>
-                <div class="category-card">
-                    <i data-lucide="wrench" class="cat-icon"></i>
-                    <h3>Ferramentas</h3>
-                    <p>Para sua oficina</p>
-                </div>
-                <div class="category-card">
-                    <i data-lucide="droplet" class="cat-icon"></i>
-                    <h3>Óleos & Fluidos</h3>
-                    <p>Manutenção essencial</p>
-                </div>
-                <div class="category-card">
-                    <i data-lucide="settings" class="cat-icon"></i>
-                    <h3>Peças Mecânicas</h3>
-                    <p>Motor e suspensão</p>
-                </div>
-                <div class="category-card">
-                    <i data-lucide="search" class="cat-icon"></i>
-                    <h3>Acessórios</h3>
-                    <p>Estilo e conforto</p>
-                </div>
-            </div>
-        </div>
-        <div class="categories-bg-shape"></div>
-    </section>
 
     <!-- Products Section -->
     <section class="products" id="products">
@@ -417,6 +322,9 @@
             
             <div class="products-grid active" id="popular">
                 <!-- Product content will go here -->
+            </div>
+            <div class="view-all-container" style="margin-top: 3rem; text-align: center;">
+                <button class="btn btn-primary" id="btn-show-all">Ver Tudo</button>
             </div>
         </div>
     </section>
@@ -461,10 +369,10 @@
             <div class="footer-col">
                 <h4>Links Rápidos</h4>
                 <ul>
-                    <li><a href="#">Início</a></li>
-                    <li><a href="#">Produtos</a></li>
-                    <li><a href="#">Sobre Nós</a></li>
-                    <li><a href="#">Contato</a></li>
+                    <li><a href="#home">Início</a></li>
+                    <li><a href="#products">Produtos</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="#contact">Contato</a></li>
                 </ul>
             </div>
              <div class="footer-col">
@@ -479,7 +387,7 @@
                 <h4>Redes Sociais</h4>
                 <div class="social-icons">
                     <a href="#"><i data-lucide="facebook"></i></a>
-                    <a href="#"><i data-lucide="instagram"></i></a>
+                    <a href="https://www.instagram.com/bomclima.tec?igsh=MXJrMXVhYTAwYjd5dg==" target="_blank"><i data-lucide="instagram"></i></a>
                     <a href="#"><i data-lucide="twitter"></i></a>
                 </div>
             </div>
@@ -494,6 +402,41 @@
         <span class="whatsapp-tooltip">nos mande uma mensagem</span>
         <i data-lucide="message-circle" class="whatsapp-icon"></i>
     </a>
+
+    <!-- User Data Collection Modal -->
+    <div id="user-data-modal" class="modal-overlay" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);">
+        <div class="modal-content animate__animated animate__zoomIn" style="background: white; width: 400px; margin: 10% auto; padding: 2rem; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h2 style="margin-bottom: 1rem; color: #1E3A8A;">Bem-vindo(a)!</h2>
+            <p style="margin-bottom: 1.5rem; color: #6B7280; font-size: 0.9rem;">Para criar seu carrinho e iniciarmos seu atendimento, por favor informe seu nome e contato.</p>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.4rem;">Nome Completo</label>
+                <input type="text" id="user-name" placeholder="Como podemos te chamar?" style="width: 100%; padding: 0.8rem; border: 2px solid #F3F4F6; border-radius: 8px; outline: none;">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.4rem;">WhatsApp</label>
+                <input type="text" id="user-whatsapp" placeholder="(XX) XXXXX-XXXX" style="width: 100%; padding: 0.8rem; border: 2px solid #F3F4F6; border-radius: 8px; outline: none;">
+            </div>
+            <button class="btn btn-primary" onclick="saveUserData()" style="width: 100%; padding: 1rem; border-radius: 8px;">COMEÇAR A COMPRAR</button>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar" style="position: fixed; right: -400px; top: 0; width: 380px; height: 100%; background: white; z-index: 1500; box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;">
+        <div class="cart-header" style="padding: 1.5rem; border-bottom: 1px solid #F3F4F6; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1.25rem; color: #1E3A8A;">Seu Carrinho</h2>
+            <button onclick="toggleCartSidebar()" style="background: none; border: none; cursor: pointer;"><i data-lucide="x"></i></button>
+        </div>
+        <div id="cart-items" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+            <!-- Cart items will go here -->
+        </div>
+        <div class="cart-footer" style="padding: 1.5rem; border-top: 1px solid #F3F4F6; background: #F9FAFB;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem;">
+                <span>Total Estimado:</span>
+                <span id="cart-total">R$ 0,00</span>
+            </div>
+            <button class="btn btn-primary" onclick="finalizeOrder()" style="width: 100%; padding: 1rem; border-radius: 8px;">FINALIZAR PEDIDO (WHATSAPP)</button>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script type="module" src="./script.js"></script>

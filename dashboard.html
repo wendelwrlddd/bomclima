@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BOM CLIMA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Immediate Auth Check before rendering
+        (function() {
+            const session = JSON.parse(localStorage.getItem('bomclima_auth_session'));
+            if (!session || !session.active) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--primary);
+            letter-spacing: -0.025em;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: var(--text-dim);
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 1rem;
+        }
+
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Products Table */
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .product-img-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.25rem;
+            background: #334155;
+            object-fit: cover;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-category {
+            background: rgba(37, 99, 235, 0.2);
+            color: #60a5fa;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .action-btn.delete:hover {
+            color: var(--danger);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            width: 500px;
+            max-width: 90vw;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        /* Fixed invisible text in dropdowns */
+        select option {
+            background-color: #1e293b;
+            color: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .hidden { display: none !important; }
+
+        .timeline-event {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-event.edit { border-left-color: #eab308; }
+        .timeline-event.delete { border-left-color: var(--danger); }
+        .timeline-event.create { border-left-color: var(--success); }
+
+        .badge-orange {
+            background: rgba(249, 115, 22, 0.2);
+            color: #fb923c;
+        }
+
+        /* View Independent Scrolling */
+        #dashboardView, #historyView, #ordersView {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            margin-right: -0.5rem;
+        }
+
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">BOM CLIMA</div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" id="navDashboard">
+                <i data-lucide="layout-dashboard"></i> Dashboard
+            </a>
+            <a href="#" class="nav-item" id="navHistory">
+                <i data-lucide="history"></i> Entrada e Saída
+            </a>
+            <a href="#" class="nav-item" id="navOrders" style="position: relative;">
+                <i data-lucide="shopping-bag"></i> Pedidos Gerados
+                <span id="orderBadge" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+            </a>
+            <a href="#" class="nav-item">
+                <i data-lucide="users"></i> Usuários
+            </a>
+            <a href="#" class="nav-item">
+                <i data-lucide="settings"></i> Configurações
+            </a>
+        </nav>
+        <div style="margin-top: auto; padding-bottom: 2rem;">
+            <a href="index.html" class="nav-item">
+                <i data-lucide="external-link"></i> Ver Loja
+            </a>
+            <a href="#" class="nav-item" id="logoutBtn" style="color: #ef4444;">
+                <i data-lucide="log-out"></i> Sair
+            </a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <header>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <h1>Gerenciamento de Produtos</h1>
+                <p style="color: var(--text-dim); font-size: 0.875rem;">Administre o catálogo de produtos e estoque</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <select id="categoryFilter" style="width: 180px;">
+                    <option value="all">Todas Categorias</option>
+                </select>
+                <div style="position: relative;">
+                    <i data-lucide="search" style="position: absolute; left: 0.75rem; top: 50%; translate: 0 -50%; width: 1rem; height: 1rem; color: var(--text-dim);"></i>
+                    <input type="text" id="productSearch" placeholder="Buscar por Nome..." 
+                        style="padding-left: 2.25rem; width: 250px;">
+                </div>
+                <button class="btn btn-primary" id="openModal">
+                    <i data-lucide="plus"></i> Novo
+                </button>
+                <button id="syncData" class="btn btn-secondary" title="Sincronizar">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="dashboardView">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total de Produtos</div>
+                    <div class="stat-value" id="totalProducts">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Valor Total do Estoque</div>
+                    <div class="stat-value" id="stockTotalValue">R$ 0,00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Categorias</div>
+                    <div class="stat-value" id="totalCategories">0</div>
+                </div>
+            </div>
+
+            <div class="table-container" style="overflow-x: auto;">
+                <table style="min-width: 1200px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px; text-align: center;">Ações</th>
+                            <th style="width: 60px;">Foto</th>
+                            <th style="min-width: 250px;">Nome</th>
+                            <th style="width: 120px;">SKU</th>
+                            <th style="width: 140px;">GTIN/EAN</th>
+                            <th style="width: 140px;">Estoque</th>
+                            <th style="width: 120px;">Preço</th>
+                            <th style="width: 180px;">Categorias</th>
+                            <th style="width: 150px;">Marcas</th>
+                            <th style="width: 200px;">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <!-- Javascript will populate -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="historyView" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Movimentações Recentes</div>
+                    <div class="stat-value" id="totalMoves">0</div>
+                </div>
+            </div>
+            <div class="table-container p-6">
+                <div id="timelineContainer" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem;">
+                    <!-- Timeline will be here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="ordersView" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Carrinhos Ativos</div>
+                    <div class="stat-value" id="activeCartsCount">0</div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table style="min-width: 1000px;">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>WhatsApp</th>
+                            <th>Última Atividade</th>
+                            <th>Itens</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <!-- Javascript will populate -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Novo Produto</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="name" required placeholder="Ex: Compressor Mahle Fiat Fiorino">
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="category">
+                        <option value="Compressores">Compressores</option>
+                        <option value="Filtros">Filtros</option>
+                        <option value="Condensadores">Condensadores</option>
+                        <option value="Válvulas">Válvulas</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Preço (R$)</label>
+                        <input type="text" id="price" required placeholder="1.500,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Promocional (R$)</label>
+                        <input type="text" id="promoPrice" placeholder="1.200,00">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Estoque Atual</label>
+                        <input type="number" id="modalStock" value="0">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 1rem; padding-top: 1.5rem;">
+                        <input type="checkbox" id="onBackorder" style="width: auto;">
+                        <label style="margin: 0; cursor: pointer;" for="onBackorder">Sob Encomenda</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Imagem do Produto</label>
+                    <input type="file" id="imageFile" accept="image/*">
+                    <input type="hidden" id="imageName">
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="description" rows="3" placeholder="Detalhes técnicos..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
