@@ -17,44 +17,50 @@ app.use(cors({
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '50mb' })); // Higher limit for Base64 images
+app.use(express.json({ limit: '50mb' }));
 
-// Database Connection
-let pool;
+// Database - auto-reconnecting single connection
+let db;
 
-async function connectDB() {
-    try {
-        // Use public proxy since api service is not on the same private network as MySQL
-        pool = mysql.createPool({
-            host: 'switchyard.proxy.rlwy.net',
-            port: 15338,
-            user: 'root',
-            password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
-            database: 'railway',
-            waitForConnections: true,
-            connectionLimit: 5,
-            queueLimit: 0,
-            enableKeepAlive: true,
-            keepAliveInitialDelay: 10000,
-            connectTimeout: 30000,
-            acquireTimeout: 30000
-        });
+const DB_CONFIG = {
+    host: 'switchyard.proxy.rlwy.net',
+    port: 15338,
+    user: 'root',
+    password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
+    database: 'railway'
+};
 
-        // Test connection
-        await pool.query('SELECT 1');
-        console.log('✅ Conectado ao MySQL no Railway (public proxy)');
-    } catch (err) {
-        console.error('❌ Erro ao conectar ao MySQL:', err.message);
-        process.exit(1);
+async function getDB() {
+    if (db) {
+        try {
+            await db.ping();
+            return db;
+        } catch (e) {
+            console.log('🔄 Reconnecting to MySQL...');
+            db = null;
+        }
     }
+    db = await mysql.createConnection(DB_CONFIG);
+    db.on('error', (err) => {
+        console.error('MySQL error:', err.code);
+        db = null;
+    });
+    console.log('✅ Conectado ao MySQL no Railway');
+    return db;
 }
 
-// Routes
+async function q(sql, params = []) {
+    const conn = await getDB();
+    return conn.execute(sql, params);
+}
+
+// Routes — Products
 app.get('/api/products', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM products ORDER BY id DESC');
+        const [rows] = await q('SELECT * FROM products ORDER BY id DESC');
         res.json(rows);
     } catch (err) {
+        console.error('GET /api/products error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -63,42 +69,42 @@ app.post('/api/products', async (req, res) => {
     const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description } = req.body;
     try {
         if (id) {
-            // Update
-            await pool.query(
+            await q(
                 'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=? WHERE id=?',
                 [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, id]
             );
             res.json({ success: true, message: 'Produto atualizado' });
         } else {
-            // Create
             const newId = Date.now();
-            await pool.query(
+            await q(
                 'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description]
             );
             res.json({ success: true, message: 'Produto criado', id: newId });
         }
     } catch (err) {
-        console.error('❌ Erro ao salvar produto:', err.message, err.code);
+        console.error('POST /api/products error:', err.message, err.code);
         res.status(500).json({ error: err.message });
     }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
-        await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
+        await q('DELETE FROM products WHERE id = ?', [req.params.id]);
         res.json({ success: true, message: 'Produto removido' });
     } catch (err) {
+        console.error('DELETE /api/products error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Orders Sync
+// Routes — Orders
 app.get('/api/orders', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM orders ORDER BY lastUpdate DESC');
+        const [rows] = await q('SELECT * FROM orders ORDER BY lastUpdate DESC');
         res.json(rows);
     } catch (err) {
+        console.error('GET /api/orders error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -106,28 +112,18 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
     const { id, customer, whatsapp, items, total, status } = req.body;
     try {
-        await pool.query(
+        await q(
             'INSERT INTO orders (id, customer, whatsapp, items, total, status, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE customer=?, whatsapp=?, items=?, total=?, status=?, lastUpdate=NOW()',
             [id, customer, whatsapp, JSON.stringify(items), total, status, customer, whatsapp, JSON.stringify(items), total, status]
         );
         res.json({ success: true });
     } catch (err) {
+        console.error('POST /api/orders error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Guard middleware - returns 503 if DB not ready
-app.use('/api', (req, res, next) => {
-    if (!pool) return res.status(503).json({ error: 'Database not ready yet, try again in a moment.' });
-    next();
+// Start server (no need to pre-connect; getDB() handles lazy connect)
+app.listen(port, () => {
+    console.log(`🚀 Servidor rodando na porta ${port}`);
 });
-
-// Start Server - connect to DB first, then listen
-async function start() {
-    await connectDB();
-    app.listen(port, () => {
-        console.log(`🚀 Servidor rodando em http://localhost:${port}`);
-    });
-}
-
-start();
