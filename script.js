@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let products = [];
     const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:3000' 
-        : 'https://mysql-production-c17b.up.railway.app'; // Railway API
+        : 'https://api-production-ef9c.up.railway.app'; 
     
     async function loadProducts() {
         // Priority 1: Load from local JSON immediately (always available)
