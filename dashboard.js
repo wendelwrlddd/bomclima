@@ -293,9 +293,9 @@ class Dashboard {
             } else if (p.stock > 0) {
                 statusText = `Em estoque (${p.stock})`;
                 statusClass = '#10b981'; // Green
-            } else if (p.stockStatus === 'instock') {
-                statusText = 'Disponível';
-                statusClass = '#10b981';
+            } else {
+                statusText = 'Fora de estoque';
+                statusClass = '#ef4444'; // Red
             }
 
             // Price display logic - Only show sale layout if promoPrice is different from price
