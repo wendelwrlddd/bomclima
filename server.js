@@ -31,7 +31,7 @@ const getDBUrl = () => {
     if (process.env.MYSQLHOST) {
         return `mysql://${process.env.MYSQLUSER}:${process.env.MYSQLPASSWORD}@${process.env.MYSQLHOST}:${process.env.MYSQLPORT}/${process.env.MYSQLDATABASE}`;
     }
-    return 'mysql://root:yLJkEbONtTjMSdDSmXvJoJQZaXFvktpZ@ballast.proxy.rlwy.net:12222/railway';
+    return '';
 };
 
 const MYSQL_URL = getDBUrl();
