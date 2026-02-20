@@ -22,13 +22,7 @@ app.use(express.json({ limit: '50mb' }));
 // Database - auto-reconnecting single connection
 let db;
 
-const DB_CONFIG = {
-    host: 'switchyard.proxy.rlwy.net',
-    port: 15338,
-    user: 'root',
-    password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
-    database: 'railway'
-};
+const MYSQL_URL = 'mysql://root:nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb@switchyard.proxy.rlwy.net:15338/railway';
 
 async function getDB() {
     if (db) {
@@ -40,13 +34,19 @@ async function getDB() {
             db = null;
         }
     }
-    db = await mysql.createConnection(DB_CONFIG);
-    db.on('error', (err) => {
-        console.error('MySQL error:', err.code);
-        db = null;
-    });
-    console.log('✅ Conectado ao MySQL no Railway');
-    return db;
+    try {
+        db = await mysql.createConnection(MYSQL_URL);
+        db.on('error', (err) => {
+            console.error('MySQL error:', err.code);
+            db = null;
+        });
+        console.log('✅ Conectado ao MySQL no Railway');
+        return db;
+    } catch (err) {
+        console.error('❌ Erro ao conectar ao MySQL:', err.message);
+        // Do not process.exit(1), let the server live to serve 500s with error messages
+        return null; 
+    }
 }
 
 async function q(sql, params = []) {
