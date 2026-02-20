@@ -24,19 +24,30 @@ let pool;
 
 async function connectDB() {
     try {
+        // Use public URL if internal host env vars are not set
+        const connectionConfig = process.env.MYSQL_URL || process.env.DATABASE_URL
+            ? { uri: process.env.MYSQL_URL || process.env.DATABASE_URL }
+            : {
+                host: process.env.MYSQLHOST,
+                user: process.env.MYSQLUSER,
+                password: process.env.MYSQLPASSWORD,
+                database: process.env.MYSQLDATABASE,
+                port: parseInt(process.env.MYSQLPORT) || 3306,
+            };
+
         pool = mysql.createPool({
-            host: process.env.MYSQLHOST,
-            user: process.env.MYSQLUSER,
-            password: process.env.MYSQLPASSWORD,
-            database: process.env.MYSQLDATABASE,
-            port: process.env.MYSQLPORT,
+            ...connectionConfig,
             waitForConnections: true,
             connectionLimit: 10,
             queueLimit: 0
         });
+
+        // Test connection
+        await pool.query('SELECT 1');
         console.log('✅ Conectado ao MySQL no Railway');
     } catch (err) {
-        console.error('❌ Erro ao conectar ao MySQL:', err);
+        console.error('❌ Erro ao conectar ao MySQL:', err.message);
+        process.exit(1); // Force Railway to restart the container
     }
 }
 
@@ -70,6 +81,7 @@ app.post('/api/products', async (req, res) => {
             res.json({ success: true, message: 'Produto criado', id: newId });
         }
     } catch (err) {
+        console.error('❌ Erro ao salvar produto:', err.message, err.code);
         res.status(500).json({ error: err.message });
     }
 });
