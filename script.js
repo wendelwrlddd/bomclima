@@ -19,44 +19,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Product Data
     let products = [];
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:3000' 
+        : 'https://sua-api.railway.app'; // <--- VOCÊ VAI TROCAR ISSO PELO LINK DO RAILWAY DEPOIS
     
     async function loadProducts() {
         try {
-            // First check LocalStorage for latest data (managed by Dashboard)
-            const localData = localStorage.getItem('bomclima_products');
-            let rawProducts = [];
-            
-            if (localData) {
-                rawProducts = JSON.parse(localData);
-            } else {
-                const response = await fetch('./products_data.json');
-                if (response.ok) {
-                    rawProducts = await response.json();
+            // Priority 1: Try Railway API
+            const apiResponse = await fetch(`${API_URL}/api/products`);
+            if (apiResponse.ok) {
+                const apiProducts = await apiResponse.json();
+                if (apiProducts.length > 0) {
+                    processProducts(apiProducts);
+                    return;
                 }
             }
-            
-            products = rawProducts.map(p => ({
-                ...p,
-                category: Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Geral'),
-                image: p.imageName ? (p.imageName.startsWith('data:image') ? p.imageName : `./uploads/${p.imageName}`) : "./assets/compressor-1.png",
-                rating: 5,
-                tags: p.tags || []
-            }));
 
-            // Set some random tags for filtering demo if none exist
-            products.forEach((p, i) => {
-                if (!p.tags || p.tags.length === 0) {
-                    p.tags = [];
-                    if (i % 3 === 0) p.tags.push('popular');
-                    if (i % 5 === 0) p.tags.push('featured');
-                    if (i % 7 === 0) p.tags.push('new');
-                }
-            });
+            // Priority 2: Fallback to LocalStorage (managed by Dashboard)
+            const localData = localStorage.getItem('bomclima_products');
+            if (localData) {
+                processProducts(JSON.parse(localData));
+                return;
+            }
 
-            renderAll();
+            // Priority 3: Fallback to static JSON
+            const response = await fetch('./products_data.json');
+            if (response.ok) {
+                processProducts(await response.json());
+            }
         } catch (e) {
-            console.error('Erro ao carregar produtos:', e);
+            console.error('Erro ao carregar produtos do servidor, tentando local...', e);
+            // Last resort
+            const localData = localStorage.getItem('bomclima_products');
+            if (localData) processProducts(JSON.parse(localData));
         }
+    }
+
+    function processProducts(rawProducts) {
+        products = rawProducts.map(p => ({
+            ...p,
+            category: Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Geral'),
+            image: p.imageName ? (p.imageName.startsWith('data:image') ? p.imageName : `./uploads/${p.imageName}`) : "./assets/compressor-1.png",
+            rating: 5,
+            tags: p.tags || []
+        }));
+
+        // Set some random tags for filtering demo if none exist
+        products.forEach((p, i) => {
+            if (!p.tags || p.tags.length === 0) {
+                p.tags = [];
+                if (i % 3 === 0) p.tags.push('popular');
+                if (i % 5 === 0) p.tags.push('featured');
+                if (i % 7 === 0) p.tags.push('new');
+            }
+        });
+
+        renderAll();
     }
 
     function renderAll() {
@@ -518,31 +536,39 @@ document.addEventListener('DOMContentLoaded', () => {
         syncOrderToDashboard(true);
     };
 
-    function syncOrderToDashboard(finalized = false) {
+    async function syncOrderToDashboard(finalized = false) {
         if (!currentUser) return;
         
-        // Mocking a database sync by using a shared LocalStorage key that the dashboard will monitor
-        const orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
         const orderData = {
             id: currentUser.whatsapp,
             customer: currentUser.name,
             whatsapp: currentUser.whatsapp,
             items: cart,
             total: document.getElementById('cart-total')?.textContent || 'R$ 0,00',
-            lastUpdate: new Date().toISOString(),
             status: finalized ? 'finalized' : 'browsing'
         };
 
+        // 1. Sync to LocalStorage (for local dashboard tab)
+        const orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
         const existingIndex = orders.findIndex(o => o.id === orderData.id);
         if (existingIndex > -1) {
-            orders[existingIndex] = orderData;
+            orders[existingIndex] = { ...orderData, lastUpdate: new Date().toISOString() };
         } else {
-            orders.push(orderData);
+            orders.push({ ...orderData, lastUpdate: new Date().toISOString() });
         }
-
         localStorage.setItem('bomclima_pending_orders', JSON.stringify(orders));
-        // Trigger a custom event for the dashboard if it's open in another tab
         window.dispatchEvent(new Event('storage'));
+
+        // 2. Sync to Railway API
+        try {
+            await fetch(`${API_URL}/api/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+        } catch (e) {
+            console.error('Erro ao sincronizar pedido com o servidor Railway:', e);
+        }
     }
 
     // --- End Cart Logic ---

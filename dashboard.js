@@ -36,10 +36,13 @@ const FULL_CATEGORIES = [
 
 class Dashboard {
     constructor() {
-        this.products = JSON.parse(localStorage.getItem('bomclima_products')) || [];
+        this.products = [];
         this.history = JSON.parse(localStorage.getItem('bomclima_history')) || [];
         this.filteredProducts = [];
         this.currentView = 'dashboard';
+        this.API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3000' 
+            : 'https://sua-api.railway.app'; // <--- VOCÊ VAI TROCAR ISSO PELO LINK DO RAILWAY DEPOIS
         this.checkAuth();
         this.init();
     }
@@ -61,10 +64,8 @@ class Dashboard {
     async init() {
         if (!this.checkAuth()) return;
         
-        if (this.products.length === 0) {
-            await this.loadInitialData();
-        }
-        this.filteredProducts = [...this.products];
+        await this.loadData();
+        
         this.populateCategoryList();
         this.populateCategoryFilter();
         this.setupTabs();
@@ -73,25 +74,39 @@ class Dashboard {
         this.updateStats();
     }
 
-    async loadInitialData() {
+    async loadData() {
         try {
-            const response = await fetch('./products_data.json');
+            // Priority 1: API
+            const response = await fetch(`${this.API_URL}/api/products`);
             if (response.ok) {
                 const data = await response.json();
-                this.products = data;
+                if (data.length > 0) {
+                    this.products = data;
+                    this.filteredProducts = [...this.products];
+                    return;
+                }
+            }
+            
+            // Priority 2: JSON Fallback
+            const localResponse = await fetch('./products_data.json');
+            if (localResponse.ok) {
+                this.products = await localResponse.json();
                 this.filteredProducts = [...this.products];
-                this.save();
             }
         } catch (error) {
-            console.error('Erro ao carregar dados iniciais:', error);
+            console.error('Erro ao carregar dados:', error);
+            // Last resort: LocalStorage
+            this.products = JSON.parse(localStorage.getItem('bomclima_products')) || [];
+            this.filteredProducts = [...this.products];
         }
     }
 
-    save() {
-        localStorage.setItem('bomclima_products', JSON.stringify(this.products));
-        localStorage.setItem('bomclima_history', JSON.stringify(this.history));
+    async save() {
+        // Stats and local sync
         this.updateStats();
         this.populateCategoryFilter();
+        localStorage.setItem('bomclima_products', JSON.stringify(this.products));
+        localStorage.setItem('bomclima_history', JSON.stringify(this.history));
     }
 
     setupTabs() {
@@ -438,7 +453,7 @@ class Dashboard {
         this.render();
     }
 
-    handleFormSubmit() {
+    async handleFormSubmit() {
         const id = document.getElementById('productId').value;
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
@@ -449,41 +464,47 @@ class Dashboard {
         const imageName = document.getElementById('imageName').value;
         const description = document.getElementById('description').value;
 
-        if (id) {
-            const index = this.products.findIndex(p => p.id == id);
-            this.products[index] = { 
-                ...this.products[index], 
-                name, 
-                categories: [category], 
-                price, 
-                promoPrice,
-                stock, 
-                stockStatus: onBackorder ? 'onbackorder' : (stock > 0 ? 'instock' : 'outofstock'),
-                imageName, 
-                description 
-            };
-            this.logEvent('edit', this.products[index], `Produto atualizado: ${stock} em estoque, ${onBackorder ? 'Sob Encomenda' : 'Pronta Entrega'}`);
-        } else {
-            const newProd = {
-                id: Date.now(),
-                name,
-                categories: [category],
-                sku: 'NOVO-' + Math.floor(Math.random() * 1000),
-                stock,
-                stockStatus: onBackorder ? 'onbackorder' : (stock > 0 ? 'instock' : 'outofstock'),
-                price,
-                promoPrice,
-                imageName,
-                description,
-                date: new Date().toISOString()
-            };
-            this.products.push(newProd);
-            this.logEvent('create', newProd, 'Produto criado manualmente no dashboard.');
-        }
+        const productData = {
+            id: id || null,
+            name,
+            categories: [category],
+            price,
+            promoPrice,
+            stock,
+            stockStatus: onBackorder ? 'onbackorder' : (stock > 0 ? 'instock' : 'outofstock'),
+            imageName,
+            description
+        };
 
-        this.filteredProducts = [...this.products];
-        this.save();
-        this.render();
+        try {
+            const response = await fetch(`${this.API_URL}/api/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (id) {
+                    const index = this.products.findIndex(p => p.id == id);
+                    this.products[index] = { ...this.products[index], ...productData };
+                    this.logEvent('edit', this.products[index], `Produto atualizado no servidor`);
+                } else {
+                    const newProd = { ...productData, id: result.id, date: new Date().toISOString() };
+                    this.products.unshift(newProd);
+                    this.logEvent('create', newProd, 'Produto criado no servidor');
+                }
+                
+                this.filteredProducts = [...this.products];
+                this.save();
+                this.render();
+            } else {
+                alert('Erro ao salvar no servidor Railway');
+            }
+        } catch (err) {
+            console.error('Erro de conexão com API:', err);
+            alert('Erro ao conectar com o Railway. As mudanças podem não ser salvas permanentemente.');
+        }
     }
 
     editProduct(id) {
@@ -504,14 +525,27 @@ class Dashboard {
         document.getElementById('modalOverlay').style.display = 'flex';
     }
 
-    deleteProduct(id) {
+    async deleteProduct(id) {
         if (confirm('Tem certeza que deseja excluir este produto?')) {
-            const p = this.products.find(prod => prod.id == id);
-            this.logEvent('delete', p, 'Produto removido do catálogo.');
-            this.products = this.products.filter(p => p.id != id);
-            this.filteredProducts = this.filteredProducts.filter(p => p.id != id);
-            this.save();
-            this.render();
+            try {
+                const response = await fetch(`${this.API_URL}/api/products/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const p = this.products.find(prod => prod.id == id);
+                    this.logEvent('delete', p, 'Produto removido do servidor');
+                    this.products = this.products.filter(p => p.id != id);
+                    this.filteredProducts = this.filteredProducts.filter(p => p.id != id);
+                    this.save();
+                    this.render();
+                } else {
+                    alert('Erro ao excluir produto no servidor.');
+                }
+            } catch (err) {
+                console.error('Erro ao excluir:', err);
+                alert('Erro de conexão com Railway.');
+            }
         }
     }
 
