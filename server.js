@@ -50,7 +50,6 @@ async function initDB(conn) {
                 imageName LONGTEXT,
                 description TEXT,
                 sku VARCHAR(100),
-                active TINYINT(1) DEFAULT 1,
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -59,22 +58,8 @@ async function initDB(conn) {
         if (!cols.find(c => c.Field === 'sku')) {
             await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
         }
-        if (!cols.find(c => c.Field === 'active')) {
-            await conn.execute(`ALTER TABLE products ADD COLUMN active TINYINT(1) DEFAULT 1`);
-        }
         await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
         
-        await conn.execute(`
-            CREATE TABLE IF NOT EXISTS movements (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                productId BIGINT,
-                type ENUM('ENTRADA', 'SAIDA'),
-                quantity INT,
-                price DECIMAL(10,2),
-                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS orders (
                 id VARCHAR(255) PRIMARY KEY,
@@ -125,7 +110,7 @@ async function q(sql, params = []) {
 // Routes — Products
 app.get('/api/products', async (req, res) => {
     try {
-        const [rows] = await q('SELECT * FROM products WHERE active = 1 ORDER BY id DESC');
+        const [rows] = await q('SELECT * FROM products ORDER BY id DESC');
         res.json(rows);
     } catch (err) {
         console.error('GET /api/products error:', err.message);
@@ -136,39 +121,20 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
     const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku } = req.body;
     try {
-        let oldStock = 0;
-        const cleanPrice = parseFloat((price || "0").toString().replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.')) || 0;
-
         if (id) {
-            // Get old stock for movement diff
-            const [rows] = await q('SELECT stock FROM products WHERE id = ?', [id]);
-            if (rows.length > 0) oldStock = rows[0].stock;
-
             await q(
-                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=?, active=1 WHERE id=?',
+                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=? WHERE id=?',
                 [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null, id]
             );
+            res.json({ success: true, message: 'Produto atualizado' });
         } else {
             const newId = Date.now();
             await q(
-                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
+                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null]
             );
-            // Log initial entry
-            if (stock > 0) {
-                await q('INSERT INTO movements (productId, type, quantity, price) VALUES (?, ?, ?, ?)', [newId, 'ENTRADA', stock, cleanPrice]);
-            }
-            return res.json({ success: true, message: 'Produto criado', id: newId });
+            res.json({ success: true, message: 'Produto criado', id: newId });
         }
-
-        // Log movement diff for updates
-        const diff = stock - oldStock;
-        if (diff !== 0) {
-            await q('INSERT INTO movements (productId, type, quantity, price) VALUES (?, ?, ?, ?)', 
-                [id, diff > 0 ? 'ENTRADA' : 'SAIDA', Math.abs(diff), cleanPrice]);
-        }
-
-        res.json({ success: true, message: 'Produto atualizado' });
     } catch (err) {
         console.error('POST /api/products error:', err.message, err.code);
         res.status(500).json({ error: err.message });
@@ -177,9 +143,8 @@ app.post('/api/products', async (req, res) => {
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
-        // Soft delete
-        await q('UPDATE products SET active = 0 WHERE id = ?', [req.params.id]);
-        res.json({ success: true, message: 'Produto desativado (soft delete)' });
+        await q('DELETE FROM products WHERE id = ?', [req.params.id]);
+        res.json({ success: true, message: 'Produto removido' });
     } catch (err) {
         console.error('DELETE /api/products error:', err.message);
         res.status(500).json({ error: err.message });
@@ -201,6 +166,22 @@ app.get('/api/movements/summary', async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.error('GET /api/movements/summary error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/movements', async (req, res) => {
+    try {
+        const [rows] = await q(`
+            SELECT m.*, p.name as productName 
+            FROM movements m 
+            JOIN products p ON m.productId = p.id 
+            ORDER BY m.date DESC 
+            LIMIT 50
+        `);
+        res.json(rows);
+    } catch (err) {
+        console.error('GET /api/movements error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

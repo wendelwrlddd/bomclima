@@ -368,7 +368,7 @@
                 <i data-lucide="layout-dashboard"></i> Dashboard
             </a>
             <a href="#" class="nav-item" id="navHistory">
-                <i data-lucide="bar-chart-3"></i> Gestão Financeira
+                <i data-lucide="history"></i> Entrada e Saída
             </a>
             <a href="#" class="nav-item" id="navOrders" style="position: relative;">
                 <i data-lucide="shopping-bag"></i> Pedidos Gerados
@@ -457,23 +457,11 @@
         <div id="historyView" class="hidden">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Entradas Mensais</div>
-                    <div class="stat-value" id="monthlyEntries" style="color: #10b981;">R$ 0,00</div>
-                    <div style="font-size: 0.75rem; color: var(--text-dim);" id="entryCount">0 itens</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Saídas Mensais</div>
-                    <div class="stat-value" id="monthlyExits" style="color: #ef4444;">R$ 0,00</div>
-                    <div style="font-size: 0.75rem; color: var(--text-dim);" id="exitCount">0 itens</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Balanço do Mês</div>
-                    <div class="stat-value" id="monthlyBalance">R$ 0,00</div>
+                    <div class="stat-label">Movimentações Recentes</div>
+                    <div class="stat-value" id="totalMoves">0</div>
                 </div>
             </div>
-            
             <div class="table-container p-6">
-                <h3 style="padding: 1.5rem 1.5rem 0.5rem; color: var(--text-dim);">Histórico de Movimentações</h3>
                 <div id="timelineContainer" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem;">
                     <!-- Timeline will be here -->
                 </div>
