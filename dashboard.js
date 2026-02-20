@@ -42,7 +42,7 @@ class Dashboard {
         this.currentView = 'dashboard';
         this.API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? 'http://localhost:3000' 
-            : 'https://sua-api.railway.app'; // <--- VOCÊ VAI TROCAR ISSO PELO LINK DO RAILWAY DEPOIS
+            : 'https://mysql-production-c17b.up.railway.app'; // Railway API
         this.checkAuth();
         this.init();
     }

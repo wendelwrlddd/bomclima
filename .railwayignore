@@ -1,0 +1,7 @@
+node_modules/
+.gemini/
+dist/
+database.sql
+uploads/
+*.log
+.vite/
