@@ -24,34 +24,32 @@ document.addEventListener('DOMContentLoaded', () => {
         : 'https://mysql-production-c17b.up.railway.app'; // Railway API
     
     async function loadProducts() {
+        // Priority 1: Load from local JSON immediately (always available)
         try {
-            // Priority 1: Try Railway API
-            const apiResponse = await fetch(`${API_URL}/api/products`);
-            if (apiResponse.ok) {
-                const apiProducts = await apiResponse.json();
-                if (apiProducts.length > 0) {
-                    processProducts(apiProducts);
-                    return;
-                }
-            }
-
-            // Priority 2: Fallback to LocalStorage (managed by Dashboard)
-            const localData = localStorage.getItem('bomclima_products');
-            if (localData) {
-                processProducts(JSON.parse(localData));
-                return;
-            }
-
-            // Priority 3: Fallback to static JSON
             const response = await fetch('./products_data.json');
             if (response.ok) {
                 processProducts(await response.json());
             }
         } catch (e) {
-            console.error('Erro ao carregar produtos do servidor, tentando local...', e);
-            // Last resort
+            // Try localStorage fallback
             const localData = localStorage.getItem('bomclima_products');
             if (localData) processProducts(JSON.parse(localData));
+        }
+
+        // Priority 2: Try Railway API in background to get latest data
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+            const apiResponse = await fetch(`${API_URL}/api/products`, { signal: controller.signal });
+            clearTimeout(timeout);
+            if (apiResponse.ok) {
+                const apiProducts = await apiResponse.json();
+                if (apiProducts.length > 0) {
+                    processProducts(apiProducts);
+                }
+            }
+        } catch (e) {
+            // API unavailable, already showing products from JSON
         }
     }
 
