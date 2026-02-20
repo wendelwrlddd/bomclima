@@ -126,6 +126,7 @@ class Dashboard {
             navHistory.onclick = (e) => {
                 e.preventDefault();
                 this.switchView('history', [navHistory], [navDashboard, navOrders], [historyView], [dashboardView, ordersView]);
+                this.loadManagementData();
             };
 
             navOrders.onclick = (e) => {
@@ -586,6 +587,89 @@ class Dashboard {
             const allCats = this.products.flatMap(p => p.categories || [p.category]);
             const uniqueCats = [...new Set(allCats.filter(Boolean))];
             document.getElementById('totalCategories').textContent = uniqueCats.length;
+        }
+    }
+
+    async loadManagementData() {
+        try {
+            const response = await fetch(`${this.API_URL}/api/movements/summary`);
+            if (response.ok) {
+                const summary = await response.json();
+                
+                let inTotal = 0, inCount = 0;
+                let outTotal = 0, outCount = 0;
+
+                summary.forEach(s => {
+                    if (s.type === 'ENTRADA') {
+                        inTotal = s.total;
+                        inCount = s.items;
+                    } else {
+                        outTotal = s.total;
+                        outCount = s.items;
+                    }
+                });
+
+                document.getElementById('monthlyEntries').textContent = inTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('monthlyExits').textContent = outTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('monthlyBalance').textContent = (outTotal - inTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                
+                document.getElementById('entryCount').textContent = `${inCount} itens`;
+                document.getElementById('exitCount').textContent = `${outCount} itens`;
+                
+                const balEl = document.getElementById('monthlyBalance').parentElement;
+                balEl.style.borderColor = (outTotal - inTotal) >= 0 ? '#10b981' : '#ef4444';
+            }
+            this.renderMovements();
+        } catch (error) {
+            console.error('Erro ao carregar gestão:', error);
+        }
+    }
+
+    async renderMovements() {
+        try {
+            const response = await fetch(`${this.API_URL}/api/movements`);
+            const movements = await response.json();
+            const container = document.getElementById('timelineContainer');
+            
+            if (!container) return;
+            container.innerHTML = '';
+
+            movements.forEach(m => {
+                const date = new Date(m.date).toLocaleString('pt-BR');
+                const isEntry = m.type === 'ENTRADA';
+                const color = isEntry ? '#10b981' : '#ef4444';
+                const icon = isEntry ? 'plus-circle' : 'minus-circle';
+
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    padding: 1rem;
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 8px;
+                    border-left: 4px solid ${color};
+                `;
+
+                div.innerHTML = `
+                    <div style="color: ${color}">
+                        <i data-lucide="${icon}"></i>
+                    </div>
+                    <div style="flex: 1">
+                        <div style="font-weight: 500">${m.productName}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim)">
+                            ${m.type} de ${m.quantity} un. em ${date}
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-weight: 500">
+                        ${(m.price * m.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Erro ao renderizar movimentos:', error);
         }
     }
 }
