@@ -75,30 +75,36 @@ class Dashboard {
     }
 
     async loadData() {
+        let localProducts = [];
+        let apiProducts = [];
+
+        // 1. Load from local JSON (Fallback source)
         try {
-            // Priority 1: API
+            const response = await fetch('./products_data.json');
+            if (response.ok) {
+                localProducts = await response.json();
+            }
+        } catch (e) {
+            localProducts = JSON.parse(localStorage.getItem('bomclima_products')) || [];
+        }
+
+        // 2. Load from API
+        try {
             const response = await fetch(`${this.API_URL}/api/products`);
             if (response.ok) {
-                const data = await response.json();
-                if (data.length > 0) {
-                    this.products = data;
-                    this.filteredProducts = [...this.products];
-                    return;
-                }
-            }
-            
-            // Priority 2: JSON Fallback
-            const localResponse = await fetch('./products_data.json');
-            if (localResponse.ok) {
-                this.products = await localResponse.json();
-                this.filteredProducts = [...this.products];
+                apiProducts = await response.json();
             }
         } catch (error) {
-            console.error('Erro ao carregar dados:', error);
-            // Last resort: LocalStorage
-            this.products = JSON.parse(localStorage.getItem('bomclima_products')) || [];
-            this.filteredProducts = [...this.products];
+            console.error('Erro ao conectar com API:', error);
         }
+
+        // 3. Merge
+        const mergedMap = new Map();
+        localProducts.forEach(p => mergedMap.set(p.id.toString(), p));
+        apiProducts.forEach(p => mergedMap.set(p.id.toString(), p));
+
+        this.products = Array.from(mergedMap.values());
+        this.filteredProducts = [...this.products];
     }
 
     async save() {

@@ -24,36 +24,48 @@ document.addEventListener('DOMContentLoaded', () => {
         : 'https://api-production-ef9c.up.railway.app'; 
     
     async function loadProducts() {
-        // Priority 1: Load from local JSON immediately (always available)
+        let localProducts = [];
+        let apiProducts = [];
+
+        // Priority 1: Load from local JSON immediately
         try {
             const response = await fetch('./products_data.json');
             if (response.ok) {
-                processProducts(await response.json());
+                localProducts = await response.json();
+                processProducts(localProducts, []); 
             }
         } catch (e) {
-            // Try localStorage fallback
             const localData = localStorage.getItem('bomclima_products');
-            if (localData) processProducts(JSON.parse(localData));
+            if (localData) localProducts = JSON.parse(localData);
+            processProducts(localProducts, []);
         }
 
-        // Priority 2: Try Railway API in background to get latest data
+        // Priority 2: Try Railway API and MERGE
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
+            const timeout = setTimeout(() => controller.abort(), 8000);
             const apiResponse = await fetch(`${API_URL}/api/products`, { signal: controller.signal });
             clearTimeout(timeout);
             if (apiResponse.ok) {
-                const apiProducts = await apiResponse.json();
+                apiProducts = await apiResponse.json();
                 if (apiProducts.length > 0) {
-                    processProducts(apiProducts);
+                    processProducts(localProducts, apiProducts);
                 }
             }
         } catch (e) {
-            // API unavailable, already showing products from JSON
+            console.log("API offline or slow, using local data.");
         }
     }
 
-    function processProducts(rawProducts) {
+    function processProducts(jsonList, apiList) {
+        // Merge strategy: Start with local, overwrite/add with API items by ID
+        const mergedMap = new Map();
+        
+        jsonList.forEach(p => mergedMap.set(p.id.toString(), p));
+        apiList.forEach(p => mergedMap.set(p.id.toString(), p));
+
+        const rawProducts = Array.from(mergedMap.values());
+
         products = rawProducts.map(p => ({
             ...p,
             category: Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Geral'),
