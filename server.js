@@ -23,11 +23,11 @@ app.use(express.json({ limit: '50mb' }));
 let db;
 
 const DB_CONFIG = {
-    host: process.env.MYSQLHOST || 'switchyard.proxy.rlwy.net',
-    port: process.env.MYSQLPORT || 15338,
-    user: process.env.MYSQLUSER || 'root',
-    password: process.env.MYSQLPASSWORD || 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
-    database: process.env.MYSQLDATABASE || 'railway'
+    host: 'switchyard.proxy.rlwy.net',
+    port: 15338,
+    user: 'root',
+    password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
+    database: 'railway'
 };
 
 async function getDB() {
