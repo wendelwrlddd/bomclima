@@ -22,7 +22,52 @@ app.use(express.json({ limit: '50mb' }));
 // Database - auto-reconnecting single connection
 let db;
 
-const MYSQL_URL = 'mysql://root:nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb@switchyard.proxy.rlwy.net:15338/railway';
+// Connection string prioritization: 
+// 1. MYSQL_URL environment variable (Railway provided)
+// 2. Constructed string from internal variables
+// 3. Fallback to confirmed public proxy (last resort)
+const getDBUrl = () => {
+    if (process.env.MYSQL_URL) return process.env.MYSQL_URL;
+    if (process.env.MYSQLHOST) {
+        return `mysql://${process.env.MYSQLUSER}:${process.env.MYSQLPASSWORD}@${process.env.MYSQLHOST}:${process.env.MYSQLPORT}/${process.env.MYSQLDATABASE}`;
+    }
+    return 'mysql://root:yLJkEbONtTjMSdDSmXvJoJQZaXFvktpZ@ballast.proxy.rlwy.net:12222/railway';
+};
+
+const MYSQL_URL = getDBUrl();
+
+async function initDB(conn) {
+    try {
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS products (
+                id BIGINT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                categories TEXT,
+                price VARCHAR(50),
+                promoPrice VARCHAR(50),
+                stock INT DEFAULT 0,
+                stockStatus VARCHAR(50),
+                imageName VARCHAR(255),
+                description TEXT,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS orders (
+                id VARCHAR(255) PRIMARY KEY,
+                customer VARCHAR(255),
+                whatsapp VARCHAR(50),
+                items TEXT,
+                total DECIMAL(10,2),
+                status VARCHAR(50),
+                lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Tabelas verificadas/criadas com sucesso');
+    } catch (err) {
+        console.error('❌ Erro ao inicializar banco:', err.message);
+    }
+}
 
 async function getDB() {
     if (db) {
@@ -30,7 +75,7 @@ async function getDB() {
             await db.ping();
             return db;
         } catch (e) {
-            console.log('🔄 Reconnecting to MySQL...');
+            console.log('🔄 Reconectando ao MySQL...');
             db = null;
         }
     }
@@ -41,10 +86,10 @@ async function getDB() {
             db = null;
         });
         console.log('✅ Conectado ao MySQL no Railway');
+        await initDB(db);
         return db;
     } catch (err) {
         console.error('❌ Erro ao conectar ao MySQL:', err.message);
-        // Do not process.exit(1), let the server live to serve 500s with error messages
         return null; 
     }
 }
