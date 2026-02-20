@@ -32,8 +32,12 @@ async function connectDB() {
             password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
             database: 'railway',
             waitForConnections: true,
-            connectionLimit: 10,
-            queueLimit: 0
+            connectionLimit: 5,
+            queueLimit: 0,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 10000,
+            connectTimeout: 30000,
+            acquireTimeout: 30000
         });
 
         // Test connection
