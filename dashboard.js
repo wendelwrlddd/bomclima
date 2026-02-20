@@ -571,12 +571,12 @@ class Dashboard {
         
         let totalValue = 0;
         this.products.forEach(p => {
-            // Exclude onbackorder from total sum as requested
-            if (p.stockStatus === 'onbackorder') return;
+            // Excluir sob encomenda e fora de estoque do cálculo de valor total
+            if (p.stockStatus === 'onbackorder' || p.stockStatus === 'outofstock') return;
 
             const qty = parseFloat(p.stock) || 0;
             if (qty > 0) {
-                // Use promo price for calculation if available, else regular price
+                // Usar preço promocional se disponível, senão preço regular
                 const priceToUse = (p.promoPrice && p.promoPrice !== '0,00') ? p.promoPrice : p.price;
                 const numericPrice = parseFloat(priceToUse.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
                 totalValue += (qty * numericPrice);
