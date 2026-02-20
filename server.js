@@ -106,8 +106,18 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-// Start Server
-app.listen(port, () => {
-    connectDB();
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+// Guard middleware - returns 503 if DB not ready
+app.use('/api', (req, res, next) => {
+    if (!pool) return res.status(503).json({ error: 'Database not ready yet, try again in a moment.' });
+    next();
 });
+
+// Start Server - connect to DB first, then listen
+async function start() {
+    await connectDB();
+    app.listen(port, () => {
+        console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+    });
+}
+
+start();
