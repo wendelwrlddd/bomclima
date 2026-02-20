@@ -463,11 +463,13 @@ class Dashboard {
         const onBackorder = document.getElementById('onBackorder').checked;
         const imageName = document.getElementById('imageName').value;
         const description = document.getElementById('description').value;
+        const sku = document.getElementById('sku').value;
 
         const productData = {
             id: id || null,
             name,
             categories: [category],
+            sku,
             price,
             promoPrice,
             stock,
@@ -520,6 +522,7 @@ class Dashboard {
         document.getElementById('onBackorder').checked = p.stockStatus === 'onbackorder';
         document.getElementById('imageName').value = p.imageName || '';
         document.getElementById('description').value = p.description || '';
+        document.getElementById('sku').value = p.sku || '';
 
         document.getElementById('modalTitle').textContent = 'Editar Produto';
         document.getElementById('modalOverlay').style.display = 'flex';

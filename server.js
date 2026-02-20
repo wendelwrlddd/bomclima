@@ -49,10 +49,16 @@ async function initDB(conn) {
                 stockStatus VARCHAR(50),
                 imageName LONGTEXT,
                 description TEXT,
+                sku VARCHAR(100),
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        // Upgrade existing column if needed
+        // Upgrade existing columns if needed
+        const [cols] = await conn.execute("SHOW COLUMNS FROM products");
+        const hasSku = cols.find(c => c.Field === 'sku');
+        if (!hasSku) {
+            await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
+        }
         await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
         
         await conn.execute(`
@@ -114,19 +120,19 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description } = req.body;
+    const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku } = req.body;
     try {
         if (id) {
             await q(
-                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=? WHERE id=?',
-                [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, id]
+                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=? WHERE id=?',
+                [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null, id]
             );
             res.json({ success: true, message: 'Produto atualizado' });
         } else {
             const newId = Date.now();
             await q(
-                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description]
+                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null]
             );
             res.json({ success: true, message: 'Produto criado', id: newId });
         }
