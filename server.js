@@ -47,11 +47,14 @@ async function initDB(conn) {
                 promoPrice VARCHAR(50),
                 stock INT DEFAULT 0,
                 stockStatus VARCHAR(50),
-                imageName VARCHAR(255),
+                imageName LONGTEXT,
                 description TEXT,
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        // Upgrade existing column if needed
+        await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
+        
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS orders (
                 id VARCHAR(255) PRIMARY KEY,
@@ -63,7 +66,7 @@ async function initDB(conn) {
                 lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log('✅ Tabelas verificadas/criadas com sucesso');
+        console.log('✅ Tabelas verificadas/atualizadas com sucesso');
     } catch (err) {
         console.error('❌ Erro ao inicializar banco:', err.message);
     }
