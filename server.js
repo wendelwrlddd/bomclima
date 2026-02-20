@@ -24,19 +24,13 @@ let pool;
 
 async function connectDB() {
     try {
-        // Use public URL if internal host env vars are not set
-        const connectionConfig = process.env.MYSQL_URL || process.env.DATABASE_URL
-            ? { uri: process.env.MYSQL_URL || process.env.DATABASE_URL }
-            : {
-                host: process.env.MYSQLHOST,
-                user: process.env.MYSQLUSER,
-                password: process.env.MYSQLPASSWORD,
-                database: process.env.MYSQLDATABASE,
-                port: parseInt(process.env.MYSQLPORT) || 3306,
-            };
-
+        // Use public proxy since api service is not on the same private network as MySQL
         pool = mysql.createPool({
-            ...connectionConfig,
+            host: 'switchyard.proxy.rlwy.net',
+            port: 15338,
+            user: 'root',
+            password: 'nqDUCuUlxtpxZztAHgWpXOKlLiZiUrVb',
+            database: 'railway',
             waitForConnections: true,
             connectionLimit: 10,
             queueLimit: 0
@@ -44,10 +38,10 @@ async function connectDB() {
 
         // Test connection
         await pool.query('SELECT 1');
-        console.log('✅ Conectado ao MySQL no Railway');
+        console.log('✅ Conectado ao MySQL no Railway (public proxy)');
     } catch (err) {
         console.error('❌ Erro ao conectar ao MySQL:', err.message);
-        process.exit(1); // Force Railway to restart the container
+        process.exit(1);
     }
 }
 
