@@ -111,11 +111,15 @@
         const status = urlParams.get('status');
         const externalRef = urlParams.get('external_reference');
 
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3000' 
+            : 'https://api-production-ef9c.up.railway.app';
+
         if (status === 'approved' && externalRef) {
             console.log('Pagamento aprovado para pedido:', externalRef);
             
             // Auto-update server status for this test phase
-            fetch(`${window.location.origin.includes('localhost') ? 'http://localhost:3000' : ''}/api/orders/${externalRef}/status`, {
+            fetch(`${API_URL}/api/orders/${externalRef}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'paid', payment_status: 'paid' })
