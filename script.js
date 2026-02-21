@@ -1,5 +1,9 @@
 console.log('Script principal carregado v2.1');
 document.addEventListener('DOMContentLoaded', () => {
+    // Mercado Pago Initialization
+    const mp = new MercadoPago('TEST-42d22568-50b2-4912-a70e-3c7dd747cdd0', {
+        locale: 'pt-BR'
+    });
     
     // Mobile Menu Toggle
     const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
@@ -711,8 +715,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Processando...';
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        const orderId = 'ORD-' + Date.now();
         const orderData = {
-            id: 'ORD-' + Date.now(),
+            id: orderId,
             customer: document.getElementById('checkout-name').value,
             whatsapp: document.getElementById('checkout-phone').value,
             items: [{
@@ -723,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sku: product.sku
             }],
             total: document.getElementById('checkout-total').textContent,
-            status: 'paid',
+            status: 'pending', // Starts as pending now
             cpf_cnpj: document.getElementById('checkout-cpf').value,
             email: document.getElementById('checkout-email').value,
             phone: document.getElementById('checkout-phone').value,
@@ -733,27 +745,46 @@ document.addEventListener('DOMContentLoaded', () => {
             district: document.getElementById('checkout-district').value,
             city: document.getElementById('checkout-city').value,
             uf: document.getElementById('checkout-uf').value,
-            payment_status: 'paid',
+            payment_status: 'pending',
             invoice_status: 'pending'
         };
 
         try {
-            const response = await fetch(`${API_URL}/api/orders`, {
+            // 1. Create Order in our DB
+            const orderResponse = await fetch(`${API_URL}/api/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
             });
 
-            if (response.ok) {
-                closeCheckout();
-                document.getElementById('success-modal').style.display = 'flex';
-                if (window.lucide) window.lucide.createIcons();
-            } else {
-                alert('Erro ao processar pedido. Tente novamente.');
-            }
+            if (!orderResponse.ok) throw new Error('Falha ao criar pedido no servidor');
+
+            // 2. Create MP Preference
+            const mpResponse = await fetch(`${API_URL}/api/create-preference`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    items: orderData.items,
+                    customer: orderData.customer,
+                    email: orderData.email
+                })
+            });
+
+            if (!mpResponse.ok) throw new Error('Falha ao criar preferência de pagamento');
+            
+            const preference = await mpResponse.json();
+            
+            // 3. Redirect to Mercado Pago Checkout
+            window.location.href = preference.init_point;
+
         } catch (e) {
-            console.error('Erro ao enviar pedido:', e);
-            alert('Erro de conexão com o servidor.');
+            console.error('Erro no checkout:', e);
+            alert('Erro ao processar o pagamento. Por favor, tente novamente.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Finalizar Pagamento';
+            }
         }
     };
 

@@ -1,10 +1,17 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const { MercadoPagoConfig, Preference } = require('mercadopago'); // New MP SDK v2
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Mercado Pago Configuration (Test credentials)
+const mpClient = new MercadoPagoConfig({ 
+    accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660' 
+});
+const preference = new Preference(mpClient);
 
 // Middleware
 app.use(cors({
@@ -12,7 +19,8 @@ app.use(cors({
         'https://bomclima-itabuna.vercel.app',
         'http://localhost:5173',
         'http://localhost:3000',
-        'http://127.0.0.1:5173'
+        'http://127.0.0.1:5173',
+        'http://localhost:3000/obrigado.html' // Allow redirect source if needed
     ],
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -303,6 +311,29 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
+app.put('/api/orders/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status, payment_status } = req.body;
+    try {
+        await q(
+            'UPDATE orders SET status = ?, payment_status = ?, lastUpdate = NOW() WHERE id = ?',
+            [status || 'paid', payment_status || 'paid', id]
+        );
+        res.json({ success: true, message: 'Status do pedido atualizado' });
+    } catch (err) {
+        console.warn('⚠️ Atualizando status em memória para pedido:', id);
+        const idx = memOrders.findIndex(o => o.id == id);
+        if (idx !== -1) {
+            memOrders[idx].status = status || 'paid';
+            memOrders[idx].payment_status = payment_status || 'paid';
+            memOrders[idx].lastUpdate = new Date().toISOString();
+            res.json({ success: true, message: 'Status atualizado em memória' });
+        } else {
+            res.status(404).json({ error: 'Pedido não encontrado para atualização de status' });
+        }
+    }
+});
+
 app.post('/api/invoices', async (req, res) => {
     const { orderId } = req.body;
     try {
@@ -356,6 +387,42 @@ app.post('/api/invoices', async (req, res) => {
     } catch (err) {
         console.error('POST /api/invoices error:', err.message);
         res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/create-preference', async (req, res) => {
+    try {
+        const { id, items, customer, cpf_cnpj, email, status } = req.body;
+        
+        // Use standard hostname or dynamic one from referer
+        const host = req.headers.origin || 'http://localhost:5173';
+        
+        const body = {
+            items: items.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                unit_price: parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.')),
+                quantity: parseInt(item.quantity) || 1,
+                currency_id: 'BRL'
+            })),
+            back_urls: {
+                success: `${host}/obrigado.html?status=approved&external_reference=${id}`,
+                failure: `${host}/index.html?status=failure`,
+                pending: `${host}/index.html?status=pending`
+            },
+            auto_return: "approved",
+            external_reference: id,
+            payer: {
+                name: customer,
+                email: email || 'test_user_123@testuser.com', // Fallback for testing
+            }
+        };
+
+        const result = await preference.create({ body });
+        res.json({ id: result.id, init_point: result.init_point });
+    } catch (error) {
+        console.error('❌ Erro ao criar preferência MP:', error);
+        res.status(500).json({ error: 'Erro ao criar preferência de pagamento' });
     }
 });
 
