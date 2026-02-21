@@ -479,7 +479,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: start;
+    position: sticky;
+    top: 120px;
 }
+
 
 .product-details-image img {
     width: 100%;
@@ -523,7 +527,30 @@ body {
     color: var(--medium-gray);
     line-height: 1.8;
     margin-bottom: 2.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 15px;
 }
+
+/* Scrollbar personalizada para a descrição */
+.detail-description::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detail-description::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.detail-description::-webkit-scrollbar-thumb {
+    background: var(--primary-blue);
+    border-radius: 10px;
+}
+
+.detail-description::-webkit-scrollbar-thumb:hover {
+    background: var(--light-blue);
+}
+
 
 .specifications {
     margin-bottom: 2.5rem;
