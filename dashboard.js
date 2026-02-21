@@ -570,28 +570,38 @@ class Dashboard {
         }
         
         let totalValue = 0;
-        console.log('Calculando estatísticas de estoque...');
+        console.log('--- ATUALIZANDO ESTOQUE V3 ---');
 
         this.products.forEach(p => {
-            const qty = parseFloat(p.stock) || 0;
-            const status = (p.stockStatus || '').toLowerCase();
+            // 1. Forçar qty para número real
+            const qty = Number(p.stock) || 0;
+            
+            // 2. Status limpo
+            const status = (p.stockStatus || '').toString().trim().toLowerCase();
 
-            // Ignorar se estoque for 0 ou se estiver marcado como fora de estoque/encomenda
-            if (qty <= 0 || status === 'onbackorder' || status === 'outofstock') return;
+            // 3. FILTRO RIGOROSO: Ignora se qty <= 0 OU status de fora/encomenda
+            if (qty <= 0 || status === 'onbackorder' || status === 'outofstock' || status === 'unavailable') {
+                return;
+            }
 
-            // Escolher o preço (promocional tem prioridade se for válido)
+            // 4. Tratar Preço
             const priceToUse = (p.promoPrice && p.promoPrice !== '0,00' && p.promoPrice !== '') ? p.promoPrice : p.price;
             if (!priceToUse) return;
 
-            // Converter preço brasileiro em número (ex: R$ 1.500,00 -> 1500.00)
-            const numericPrice = parseFloat(priceToUse.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+            // Converter "R$ 1.500,00" -> 1500.00
+            // Remove tudo que não é dígito ou vírgula, depois troca vírgula por ponto
+            const cleanPrice = priceToUse.toString().replace(/[^\d,]/g, '').replace(',', '.');
+            const numericPrice = parseFloat(cleanPrice) || 0;
             
-            totalValue += (qty * numericPrice);
+            if (numericPrice > 0) {
+                totalValue += (qty * numericPrice);
+            }
         });
 
         const stockEl = document.getElementById('stockTotalValue');
         if (stockEl) {
             stockEl.textContent = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            console.log('Novo Total:', stockEl.textContent);
         }
 
         if (document.getElementById('totalCategories')) {
