@@ -594,38 +594,65 @@ class Dashboard {
         }
         
         let totalValue = 0;
-        console.log('--- ATUALIZANDO ESTOQUE V3 ---');
+        console.log('--- RECALCULANDO ESTOQUE (VERSÃO ULTRA-ROBUSTA) ---');
 
         this.products.forEach(p => {
-            // 1. Forçar qty para número real
-            const qty = Number(p.stock) || 0;
+            // 1. Normalizar Estoque (Garantir que seja número inteiro limpo)
+            // Se vier como string "1.000", remove o ponto de milhar para não ser lido como 1.0
+            let stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
+            // Se contiver ponto e vírgula, é Brasileiro. Se só ponto e for string, perigo.
+            // Para estoque, removemos tudo que não for dígito.
+            const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
             
-            // 2. Status limpo
-            const status = (p.stockStatus || '').toString().trim().toLowerCase();
+            // 2. Normalizar Status
+            const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
+            const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
 
-            // 3. FILTRO RIGOROSO: Ignora se qty <= 0 OU status de fora/encomenda
-            if (qty <= 0 || status === 'onbackorder' || status === 'outofstock' || status === 'unavailable') {
-                return;
-            }
+            // 3. FILTROS DE VALIDAÇÃO
+            // - Deve ter estoque > 0
+            // - Não pode estar em 'offbackorder' ou 'outofstock'
+            // - Deve estar com status 'publish' (se o campo existir)
+            if (qty <= 0) return;
+            if (stockStatus === 'onbackorder' || stockStatus === 'outofstock' || stockStatus === 'unavailable') return;
+            if (publishStatus !== 'publish') return;
 
-            // 4. Tratar Preço
-            const priceToUse = (p.promoPrice && p.promoPrice !== '0,00' && p.promoPrice !== '') ? p.promoPrice : p.price;
-            if (!priceToUse) return;
+            // 4. Normalizar Preço (Tratar R$ 1.500,00 ou 1500.00)
+            const parsePrice = (val) => {
+                if (val === undefined || val === null || val === '') return 0;
+                let str = val.toString().trim();
+                if (str === '0,00' || str === '0.00' || str === '0') return 0;
 
-            // Converter "R$ 1.500,00" -> 1500.00
-            // Remove tudo que não é dígito ou vírgula, depois troca vírgula por ponto
-            const cleanPrice = priceToUse.toString().replace(/[^\d,]/g, '').replace(',', '.');
-            const numericPrice = parseFloat(cleanPrice) || 0;
+                // Se tiver vírgula, tratamos como formato BR (1.500,00)
+                if (str.includes(',')) {
+                    // Remove tudo exceto dígitos e a vírgula decimal
+                    str = str.replace(/[^\d,]/g, '').replace(',', '.');
+                } else {
+                    // Se não tiver vírgula, removemos tudo exceto dígitos e ponto decimal
+                    str = str.replace(/[^\d.]/g, '');
+                }
+                return parseFloat(str) || 0;
+            };
+
+            const price = parsePrice(p.price);
+            const promo = parsePrice(p.promoPrice);
+
+            // 5. Decidir qual preço usar (Prioriza promo se for > 0)
+            let finalPrice = (promo > 0) ? promo : price;
             
-            if (numericPrice > 0) {
-                totalValue += (qty * numericPrice);
+            if (finalPrice > 0) {
+                totalValue += (qty * finalPrice);
             }
         });
 
         const stockEl = document.getElementById('stockTotalValue');
         if (stockEl) {
-            stockEl.textContent = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            console.log('Novo Total:', stockEl.textContent);
+            stockEl.textContent = totalValue.toLocaleString('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            console.log('Cálculo finalizado. Novo Valor Total:', stockEl.textContent);
         }
 
         if (document.getElementById('totalCategories')) {
@@ -634,6 +661,7 @@ class Dashboard {
             document.getElementById('totalCategories').textContent = uniqueCats.length;
         }
     }
+
 }
 
 const dashboard = new Dashboard();
