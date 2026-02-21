@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contato - BOM CLIMA Ar Condicionado Automotivo</title>
+    <meta name="description" content="Entre em contato com a BOM CLIMA. Ligue, mande mensagem no WhatsApp ou agende uma revisão pelo nosso calendário online.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ===== CONTACT PAGE OVERRIDES ===== */
+        .contact-full-section {
+            padding: 4rem 0 6rem;
+            background: #F9FAFB;
+            min-height: 80vh;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        .contact-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .contact-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.13); }
+        .contact-card.call { border-color: #1E3A8A; }
+        .contact-card.call:hover { background: #EFF6FF; }
+        .contact-card.whatsapp { border-color: #22C55E; }
+        .contact-card.whatsapp:hover { background: #F0FDF4; }
+        .contact-card.instagram { border-color: #E1306C; }
+        .contact-card.instagram:hover { background: #FFF0F5; }
+        .contact-card.scheduler { border-color: #F59E0B; cursor: default; grid-column: 1 / -1; }
+        .card-icon-wrapper {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+        .call .card-icon-wrapper { background: #DBEAFE; color: #1E3A8A; }
+        .whatsapp .card-icon-wrapper { background: #DCFCE7; color: #16A34A; }
+        .instagram .card-icon-wrapper { background: #FCE7F3; color: #BE185D; }
+        .waze { border-color: #33CCFF; }
+        .waze:hover { background: #F0FDFF; }
+        .waze .card-icon-wrapper { background: #CFFAFE; color: #0891B2; }
+        .waze .card-action { background: #0891B2; }
+        .waze .card-action:hover { background: #0e7490; }
+        .scheduler .card-icon-wrapper { background: #FEF3C7; color: #D97706; }
+        .card-icon-wrapper i { width: 30px; height: 30px; }
+        .contact-card h3 { font-size: 1.1rem; font-weight: 700; color: #1F2937; margin: 0; }
+        .contact-card p { font-size: 0.9rem; color: #6B7280; margin: 0; }
+        .card-action {
+            display: inline-block; margin-top: 0.75rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            background: #1E3A8A; color: white;
+            transition: background 0.2s;
+        }
+        .call .card-action { background: #1E3A8A; }
+        .call .card-action:hover { background: #1e40af; }
+        .whatsapp .card-action { background: #22C55E; }
+        .whatsapp .card-action:hover { background: #16A34A; }
+        .instagram .card-action { background: linear-gradient(135deg, #E1306C, #FD6D22); }
+        /* Calendar */
+        .calendar-wrapper { width: 100%; max-width: 420px; margin: 1rem auto 0; }
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+        .calendar-header button { background: #F3F4F6; border: none; border-radius: 8px; padding: 0.4rem 0.7rem; cursor: pointer; color: #1E3A8A; }
+        .calendar-header button:hover { background: #E5E7EB; }
+        .calendar-header h4 { font-size: 1rem; font-weight: 700; color: #1F2937; text-transform: capitalize; }
+        .calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 0.4rem; }
+        .calendar-grid-header span { font-size: 0.75rem; font-weight: 700; color: #9CA3AF; padding: 0.25rem; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day { padding: 0.45rem; text-align: center; border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+        .calendar-day:hover:not(.disabled) { background: #DBEAFE; color: #1E3A8A; }
+        .calendar-day.today { background: #EFF6FF; color: #1E3A8A; font-weight: 700; border: 1px solid #BFDBFE; }
+        .calendar-day.selected { background: #1E3A8A; color: #fff !important; font-weight: 700; }
+        .calendar-day.disabled { color: #D1D5DB; cursor: not-allowed; }
+        .schedule-feedback { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; padding: 0.75rem 1rem; background: #EFF6FF; border-radius: 10px; font-size: 0.9rem; color: #1E3A8A; font-weight: 600; flex-wrap: wrap; justify-content: center; }
+        .schedule-feedback button { padding: 0.5rem 1.25rem; }
+        /* Maintenance Grid */
+        .maintenance-services-section { margin-top: 5rem; }
+        .maintenance-grid { display: flex; flex-direction: column; gap: 4rem; margin-top: 3rem; }
+        .maintenance-item { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+        .maintenance-item.alternate .maintenance-img-box { order: 2; }
+        .maintenance-item.alternate .maintenance-text-box { order: 1; }
+        .maintenance-img-box { border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.12); aspect-ratio: 4/3; }
+        .maintenance-img-box img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+        .maintenance-img-box:hover img { transform: scale(1.04); }
+        .maintenance-text-box h3 { font-size: 1.6rem; font-weight: 800; color: #1E3A8A; margin-bottom: 1rem; }
+        .maintenance-text-box p { color: #4B5563; line-height: 1.8; font-size: 1rem; }
+        @media (max-width: 768px) {
+            .maintenance-item, .maintenance-item.alternate { grid-template-columns: 1fr; }
+            .maintenance-item.alternate .maintenance-img-box { order: 0; }
+            .maintenance-item.alternate .maintenance-text-box { order: 1; }
+            .contact-card.scheduler { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container top-bar-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="wpp-icon"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>
+            <span>Agilize seu atendimento pelo nosso WhatsApp!</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo" onclick="window.location.href='index.html'" style="cursor:pointer;">
+                <img src="./assets/logo.png" alt="Bom Clima" class="logo-img">
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link animate__animated animate__backInDown">Início</a>
+                <a href="index.html#products" class="nav-link animate__animated animate__backInDown">Produtos</a>
+                <a href="index.html#categories" class="nav-link animate__animated animate__backInDown">Categorias</a>
+                <a href="contato.html" class="nav-link animate__animated animate__backInDown active">Contato</a>
+            </nav>
+            <div class="header-actions">
+                <button class="cart-btn" onclick="window.location.href='index.html'">
+                    <i data-lucide="shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </button>
+                <button class="mobile-menu-btn">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contact Main -->
+    <main class="contact-full-section">
+        <div class="container">
+
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">Canais de Atendimento</h2>
+                <div class="section-line"></div>
+                <p class="section-description">Escolha o melhor canal para falar com nossa equipe especializada.</p>
+            </div>
+
+            <div class="contact-grid">
+                <!-- LIGAR -->
+                <div class="contact-card call" data-aos="zoom-in" data-aos-delay="0"
+                     onclick="window.location.href='tel:+557333018435'">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="phone-call"></i>
+                    </div>
+                    <h3>Ligar Agora</h3>
+                    <p>(73) 3301-8435</p>
+                    <span class="card-action">Chamar via Telefone</span>
+                </div>
+
+                <!-- WHATSAPP -->
+                <div class="contact-card whatsapp" data-aos="zoom-in" data-aos-delay="100"
+                     onclick="window.open('https://wa.me/557381203737','_blank')">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="message-circle"></i>
+                    </div>
+                    <h3>Vendas / Suporte</h3>
+                    <p>(73) 9-8120-3737</p>
+                    <span class="card-action">Abrir no WhatsApp</span>
+                </div>
+
+                <!-- INSTAGRAM -->
+                <div class="contact-card instagram" data-aos="zoom-in" data-aos-delay="200"
+                     onclick="window.open('https://www.instagram.com/bomclima.tec','_blank')">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="instagram"></i>
+                    </div>
+                    <h3>Instagram</h3>
+                    <p>@bomclima.tec</p>
+                    <span class="card-action">Acessar Perfil</span>
+                </div>
+
+                <!-- WAZE -->
+                <div class="contact-card waze" data-aos="zoom-in" data-aos-delay="300"
+                     onclick="window.open('https://waze.com/ul?q=R.+S%C3%A3o+Pedro%2C+44+-+Alto+Maron%2C+Itabuna+-+BA%2C+45603-420&navigate=yes','_blank')">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="navigation"></i>
+                    </div>
+                    <h3>Como Chegar</h3>
+                    <p>R. São Pedro, 44 - Alto Maron<br>Itabuna - BA, 45603-420</p>
+                    <span class="card-action">Abrir no Waze</span>
+                </div>
+
+                <!-- CALENDÁRIO -->
+                <div class="contact-card scheduler" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="calendar-check"></i>
+                    </div>
+                    <h3>Agendar Revisão</h3>
+                    <p>Selecione uma data disponível no calendário</p>
+
+                    <div class="calendar-wrapper">
+                        <div class="calendar-header">
+                            <button id="prev-month"><i data-lucide="chevron-left"></i></button>
+                            <h4 id="current-month-year">...</h4>
+                            <button id="next-month"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                        <div class="calendar-grid-header">
+                            <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+                        </div>
+                        <div id="calendar-days" class="calendar-grid"></div>
+                    </div>
+
+                    <div id="schedule-feedback" class="schedule-feedback" style="display:none;">
+                        <i data-lucide="check-circle" style="color:#22C55E;width:18px;"></i>
+                        <span id="selected-date-text"></span>
+                        <button class="btn btn-primary btn-sm" onclick="sendScheduleWhatsApp()">
+                            Confirmar pelo WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Infraestrutura -->
+            <div class="maintenance-services-section">
+                <div class="section-header" data-aos="fade-up">
+                    <h2 class="section-title">Nossa Estrutura &amp; Serviços</h2>
+                    <div class="section-line"></div>
+                </div>
+
+                <div class="maintenance-grid">
+                    <div class="maintenance-item" data-aos="fade-right">
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato/foto-atendimento-campo.jpg" alt="Linha Amarela e Pesada">
+                        </div>
+                        <div class="maintenance-text-box">
+                            <h3>Linha Amarela &amp; Pesada</h3>
+                            <p>Especialistas em sistemas de ar condicionado para maquinário pesado. Realizamos diagnósticos e manutenções em tratores, escavadeiras e retroescavadeiras diretamente na obra, minimizando o tempo de parada da sua operação.</p>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item alternate" data-aos="fade-left">
+                        <div class="maintenance-text-box">
+                            <h3>Frota de Suporte Móvel</h3>
+                            <p>Nossa frota de unidades móveis está sempre equipada com ferramentas de última geração para realizar reparos rápidos e eficientes onde você precisar, levando a excelência da Bom Clima até o seu local.</p>
+                        </div>
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato/foto-pickup-azul.jpg" alt="Pickup Azul Bom Clima">
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item" data-aos="fade-right">
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato/foto-sala-vip.jpg" alt="Sala de Espera VIP">
+                        </div>
+                        <div class="maintenance-text-box">
+                            <h3>Sala de Espera VIP</h3>
+                            <p>Enquanto cuidamos do seu veículo com dedicação total, você aguarda em um ambiente climatizado e confortável, com café fresquinho, TV e Wi-Fi. Porque o seu conforto também é nossa prioridade.</p>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item alternate" data-aos="fade-left">
+                        <div class="maintenance-text-box">
+                            <h3>Estoque &amp; Almoxarifado</h3>
+                            <p>Contamos com um dos maiores estoques de peças para ar condicionado automotivo da região. Compressores, condensadores, filtros e muito mais — tudo à pronta entrega para garantir a agilidade no seu atendimento.</p>
+                        </div>
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato/foto-almoxarifado.jpg" alt="Almoxarifado">
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item" data-aos="fade-right">
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato/foto-escritorio.jpg" alt="Escritório da Bom Clima">
+                        </div>
+                        <div class="maintenance-text-box">
+                            <h3>Atendimento Administrativo</h3>
+                            <p>Nossa equipe administrativa está sempre pronta para fornecer orçamentos detalhados, atender consultorias técnicas e oferecer o melhor suporte pós-venda. Transparência e profissionalismo em cada interação.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer IDÊNTICO ao index.html -->
+    <footer class="footer" data-aos="fade-up">
+        <div class="footer-top-line"></div>
+        <div class="container footer-content">
+            <div class="footer-col">
+                <div class="logo">
+                    <span class="logo-text white">BOM CLIMA</span>
+                </div>
+                <p>Sua loja de confiança para peças e acessórios automotivos de alta performance.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="index.html#products">Produtos</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="#" style="font-size:0.8rem;color:#6B7280;">Política de Privacidade</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contato</h4>
+                <ul>
+                    <li><i data-lucide="phone"></i> (73) 8120-3737</li>
+                    <li><i data-lucide="mail"></i> atendimento@bomclima.top</li>
+                    <li><i data-lucide="map-pin"></i> R. São Pedro, 44 - Alto Maron, Itabuna - BA</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Redes Sociais</h4>
+                <div class="social-icons">
+                    <a href="#"><i data-lucide="facebook"></i></a>
+                    <a href="https://www.instagram.com/bomclima.tec?igsh=MXJrMXVhYTAwYjd5dg==" target="_blank"><i data-lucide="instagram"></i></a>
+                    <a href="#"><i data-lucide="twitter"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BOM CLIMA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Float -->
+    <a href="https://wa.me/557381203737" class="whatsapp-float" target="_blank" rel="noopener noreferrer">
+        <span class="whatsapp-tooltip">nos mande uma mensagem</span>
+        <i data-lucide="message-circle" class="whatsapp-icon"></i>
+    </a>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // AOS
+            if (typeof AOS !== 'undefined') AOS.init({ duration: 800, once: true });
+
+            // Lucide
+            if (window.lucide) window.lucide.createIcons();
+
+            // Mobile menu
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            const nav = document.querySelector('.nav');
+            if (mobileBtn) mobileBtn.addEventListener('click', () => nav.classList.toggle('active'));
+
+            // Calendar
+            let currentDate = new Date();
+            let selectedDate = null;
+
+            function renderCalendar() {
+                const yearEl = document.getElementById('current-month-year');
+                const grid = document.getElementById('calendar-days');
+                if (!yearEl || !grid) return;
+                const y = currentDate.getFullYear();
+                const m = currentDate.getMonth();
+                yearEl.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(currentDate);
+                const firstDay = new Date(y, m, 1).getDay();
+                const daysInMonth = new Date(y, m + 1, 0).getDate();
+                grid.innerHTML = '';
+                for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+                const today = new Date();
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const checkDate = new Date(y, m, d);
+                    const isToday = today.getDate() === d && today.getMonth() === m && today.getFullYear() === y;
+                    const isSel = selectedDate && selectedDate.getDate() === d && selectedDate.getMonth() === m && selectedDate.getFullYear() === y;
+                    const dayEl = document.createElement('div');
+                    dayEl.className = `calendar-day${isToday ? ' today' : ''}${isSel ? ' selected' : ''}`;
+                    dayEl.textContent = d;
+                    const todayStart = new Date(today); todayStart.setHours(0,0,0,0);
+                    if (checkDate < todayStart) {
+                        dayEl.classList.add('disabled');
+                    } else {
+                        dayEl.onclick = () => {
+                            selectedDate = new Date(y, m, d);
+                            renderCalendar();
+                            const fb = document.getElementById('schedule-feedback');
+                            const tx = document.getElementById('selected-date-text');
+                            if (fb) fb.style.display = 'flex';
+                            if (tx) tx.textContent = `Data: ${selectedDate.toLocaleDateString('pt-BR')}`;
+                            if (window.lucide) window.lucide.createIcons();
+                        };
+                    }
+                    grid.appendChild(dayEl);
+                }
+            }
+
+            document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
+            document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+            renderCalendar();
+
+            window.sendScheduleWhatsApp = function() {
+                if (!selectedDate) return;
+                const date = selectedDate.toLocaleDateString('pt-BR');
+                const msg = encodeURIComponent(`Olá! Gostaria de agendar uma manutenção na Bom Clima para o dia: *${date}*. Pode confirmar a disponibilidade?`);
+                window.open(`https://wa.me/557381203737?text=${msg}`, '_blank');
+            };
+        });
+    </script>
+</body>
+</html>

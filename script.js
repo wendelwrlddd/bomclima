@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date();
     let selectedDate = null;
 
-    function initCalendar() {
+    window.initCalendar = function() {
         renderCalendar();
         const prevBtn = document.getElementById('prev-month');
         const nextBtn = document.getElementById('next-month');
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.scrollToContact = function() {
-        openContactSection();
+        window.location.href = 'contato.html';
     };
 
     function renderBackorderProducts() {
