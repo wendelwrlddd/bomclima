@@ -42,18 +42,41 @@ let memOrders = [];
 let memEvents = [];
 
 // Connection string prioritization: 
-// 1. MYSQL_URL environment variable (Railway provided)
-// 2. Constructed string from internal variables
-// 3. Fallback to confirmed public proxy (last resort)
+// 1. MYSQL_URL environment variable (Railway/Production)
+// 2. Constructed string from internal variables (Individual vars)
+// 3. Fallback for Local/Development
 const getDBUrl = () => {
+    // Priority 1: Full URL
     if (process.env.MYSQL_URL) return process.env.MYSQL_URL;
-    if (process.env.MYSQLHOST) {
-        return `mysql://${process.env.MYSQLUSER}:${process.env.MYSQLPASSWORD}@${process.env.MYSQLHOST}:${process.env.MYSQLPORT}/${process.env.MYSQLDATABASE}`;
+    if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+    // Priority 2: Individual variables (Support both MYSQLHOST and MYSQL_HOST formats)
+    const host = process.env.MYSQLHOST || process.env.MYSQL_HOST;
+    const user = process.env.MYSQLUSER || process.env.MYSQL_USER || 'root';
+    const password = process.env.MYSQLPASSWORD || process.env.MYSQL_ROOT_PASSWORD || process.env.MYSQL_PASSWORD;
+    const port = process.env.MYSQLPORT || process.env.MYSQL_PORT || '3306';
+    const database = process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'railway';
+
+    if (host) {
+        return `mysql://${user}:${password}@${host}:${port}/${database}`;
     }
+    
+    // Fallback for local dev if .env is missing but we want to reach Railway Public Proxy
+    if (process.env.MYSQL_PUBLIC_URL) return process.env.MYSQL_PUBLIC_URL;
+    
     return '';
 };
 
 const MYSQL_URL = getDBUrl();
+console.log('📡 Configuração de Banco de Dados:');
+if (MYSQL_URL) {
+    const maskedUrl = MYSQL_URL.replace(/:([^@]+)@/, ':****@');
+    console.log(`   - URL: ${maskedUrl}`);
+} else {
+    console.log('   - ⚠️ Nenhuma URL de banco configurada. Usando modo offline.');
+}
+
+let pool = null;
 
 async function initDB(conn) {
     try {
@@ -137,27 +160,34 @@ async function initDB(conn) {
 }
 
 async function getDB() {
-    if (db) {
-        try {
-            await db.ping();
-            return db;
-        } catch (e) {
-            console.log('🔄 Reconectando ao MySQL...');
-            db = null;
-        }
+    if (pool) return pool;
+    
+    if (!MYSQL_URL) {
+        console.warn('⚠️ Impossível conectar: MYSQL_URL não definida.');
+        return null;
     }
+
     try {
-        db = await mysql.createConnection(MYSQL_URL);
-        db.on('error', (err) => {
-            console.error('MySQL error:', err.code);
-            db = null;
+        pool = mysql.createPool({
+            uri: MYSQL_URL,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 0
         });
-        console.log('✅ Conectado ao MySQL no Railway');
-        await initDB(db);
-        return db;
+        
+        // Test connection
+        const conn = await pool.getConnection();
+        console.log('✅ Conectado ao MySQL Pool');
+        await initDB(conn);
+        conn.release();
+        
+        return pool;
     } catch (err) {
-        console.error('❌ Erro ao conectar ao MySQL:', err.message);
-        return null; 
+        console.error('❌ Erro fatal ao configurar Pool de Banco:', err.message);
+        pool = null;
+        return null;
     }
 }
 
