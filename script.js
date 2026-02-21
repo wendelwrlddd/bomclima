@@ -1,3 +1,4 @@
+console.log('Script principal carregado v2');
 document.addEventListener('DOMContentLoaded', () => {
     
     // Mobile Menu Toggle
@@ -692,6 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     contactLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log('Botão de contato clicado');
             openContactSection();
         });
     });
