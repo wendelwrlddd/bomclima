@@ -1,4 +1,6 @@
 
+import { calculateStockTotalValue, formatCurrency } from './utils-stats.js';
+
 const FULL_CATEGORIES = [
     "Sem categoria", "BOBINA MAGUINETICA P/C TM15/TM16 24", "Bobina para compressor", "Caixa de teto", 
     "celta", "Chave AC universal", "CHICOTE 5 VIAS", "Chicote bomba ar linha GM", "CHICOTE LINHA GM", 
@@ -593,55 +595,12 @@ class Dashboard {
             document.getElementById('totalProducts').textContent = this.products.length;
         }
         
-        let totalValue = 0;
-        console.log('--- CALCULANDO VALOR TOTAL DO ESTOQUE (PRODUTOS ATIVOS) ---');
-
-        this.products.forEach(p => {
-            // 1. Normalizar Estoque
-            let stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
-            const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
-            
-            // 2. Normalizar Status
-            const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
-            const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
-
-            // 3. FILTROS RIGOROSOS (Conforme solicitado pelo usuário):
-            // - Pular se NÃO for 'instock' (isso remove automaticamente 'onbackorder' e 'outofstock')
-            // - Pular se a quantidade for 0 ou menor
-            // - Pular se o produto não estiver publicado
-            if (stockStatus !== 'instock') return;
-            if (qty <= 0) return;
-            if (publishStatus !== 'publish') return;
-
-            // 4. Normalizar Preço
-            const parsePrice = (val) => {
-                if (!val) return 0;
-                let str = val.toString().trim();
-                if (str.includes(',')) {
-                    str = str.replace(/[^\d,]/g, '').replace(',', '.');
-                } else {
-                    str = str.replace(/[^\d.]/g, '');
-                }
-                return parseFloat(str) || 0;
-            };
-
-            const price = parsePrice(p.price);
-            const promo = parsePrice(p.promoPrice);
-            let finalPrice = (promo > 0) ? promo : price;
-            
-            if (finalPrice > 0) {
-                totalValue += (qty * finalPrice);
-            }
-        });
+        // Usando a lógica movida para utils-stats.js
+        const totalValue = calculateStockTotalValue(this.products);
 
         const stockEl = document.getElementById('stockTotalValue');
         if (stockEl) {
-            stockEl.textContent = totalValue.toLocaleString('pt-BR', { 
-                style: 'currency', 
-                currency: 'BRL',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            stockEl.textContent = formatCurrency(totalValue);
         }
 
         if (document.getElementById('totalCategories')) {
