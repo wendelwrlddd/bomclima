@@ -18,9 +18,10 @@ app.use(cors({
     origin: [
         'https://bomclima-itabuna.vercel.app',
         'http://localhost:5173',
+        'http://localhost:5174',
         'http://localhost:3000',
         'http://127.0.0.1:5173',
-        'http://localhost:3000/obrigado.html' // Allow redirect source if needed
+        'http://127.0.0.1:5174'
     ],
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -394,17 +395,35 @@ app.post('/api/create-preference', async (req, res) => {
     try {
         const { id, items, customer, cpf_cnpj, email, status } = req.body;
         
-        // Use standard hostname or dynamic one from referer
-        const host = req.headers.origin || 'http://localhost:5173';
+        // Use Origin header, Referer, or fallback to the current request's host
+        let host = req.headers.origin;
+        if (!host && req.headers.referer) {
+            try {
+                const refUrl = new URL(req.headers.referer);
+                host = `${refUrl.protocol}//${refUrl.host}`;
+            } catch (e) {
+                host = 'http://localhost:5173';
+            }
+        }
+        if (!host) host = 'http://localhost:5173';
         
         const body = {
-            items: items.map(item => ({
-                id: item.id.toString(),
-                title: item.name,
-                unit_price: parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.')),
-                quantity: parseInt(item.quantity) || 1,
-                currency_id: 'BRL'
-            })),
+            items: items.map(item => {
+                // Handle Brazilian price format: R$ 1.234,56 -> 1234.56
+                let rawPrice = String(item.price || '0')
+                    .replace('R$', '')
+                    .replace(/\s/g, '')
+                    .replace(/\./g, '')    // remove thousand separators (dots)
+                    .replace(',', '.');    // replace decimal comma with dot
+                const unitPrice = parseFloat(rawPrice) || 0.01;
+                return {
+                    id: item.id.toString(),
+                    title: item.name,
+                    unit_price: unitPrice,
+                    quantity: parseInt(item.quantity) || 1,
+                    currency_id: 'BRL'
+                };
+            }),
             back_urls: {
                 success: `${host}/obrigado.html?status=approved&external_reference=${id}`,
                 failure: `${host}/index.html?status=failure`,

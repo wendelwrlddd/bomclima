@@ -1,10 +1,206 @@
 console.log('Script principal carregado v2.1');
-document.addEventListener('DOMContentLoaded', () => {
-    // Mercado Pago Initialization
-    const mp = new MercadoPago('TEST-42d22568-50b2-4912-a70e-3c7dd747cdd0', {
-        locale: 'pt-BR'
+
+// --- Global Variables & Constants ---
+let products = [];
+let cart = JSON.parse(localStorage.getItem('bomclima_cart')) || [];
+let currentUser = JSON.parse(localStorage.getItem('bomclima_user')) || null;
+let currentOpenProductId = null;
+let mp = null;
+
+const API_URL = 'https://api-production-ef9c.up.railway.app'; 
+
+// Mercado Pago Initialization (Try-catch to avoid crashing entire script)
+try {
+    if (typeof MercadoPago !== 'undefined') {
+        mp = new MercadoPago('TEST-42d22568-50b2-4912-a70e-3c7dd747cdd0', {
+            locale: 'pt-BR'
+        });
+        console.log('Mercado Pago SDK inicializado.');
+    } else {
+        console.warn('⚠️ SDK do Mercado Pago não encontrado. O checkout pode não funcionar.');
+    }
+} catch (e) {
+    console.error('❌ Erro ao inicializar Mercado Pago:', e);
+}
+
+// --- Global Functions (Exposed to window) ---
+window.showProductDetails = function(productId) {
+    console.log('showProductDetails chamado com ID:', productId);
+    currentOpenProductId = productId;
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+
+    const sectionsToHide = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container'];
+    sectionsToHide.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.style.display = 'none';
     });
     
+    const detailSection = document.getElementById('product-details');
+    if (detailSection) detailSection.style.display = 'block';
+    
+    // Fill data
+    if (document.getElementById('detail-image')) document.getElementById('detail-image').src = product.image;
+    if (document.getElementById('detail-title')) document.getElementById('detail-title').textContent = product.name;
+    
+    const hasPromo = product.promoPrice && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00';
+    const priceEl = document.getElementById('detail-price');
+    if (priceEl) {
+        priceEl.innerHTML = `
+            ${hasPromo ? `<span style="font-size: 1rem; color: #ef4444; text-decoration: line-through; margin-right: 10px;">${product.price}</span>` : ''}
+            <span>${hasPromo ? product.promoPrice : product.price}</span>
+        `;
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.openCheckout = function() {
+    console.log('openCheckout chamado. currentOpenProductId:', currentOpenProductId);
+    if (!currentOpenProductId) return;
+    const product = products.find(p => p.id == currentOpenProductId);
+    if (!product) return;
+    
+    const priceStr = product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price;
+    const totalEl = document.getElementById('checkout-total');
+    if (totalEl) totalEl.textContent = priceStr;
+    
+    // Auto-fill from current user if exists
+    if (currentUser) {
+        const nameField = document.getElementById('checkout-name');
+        const phoneField = document.getElementById('checkout-phone');
+        const emailField = document.getElementById('checkout-email');
+        if (nameField) nameField.value = currentUser.name || '';
+        if (phoneField) phoneField.value = currentUser.whatsapp || '';
+        if (emailField) emailField.value = currentUser.email || '';
+    }
+
+    const modal = document.getElementById('checkout-modal');
+    if (modal) modal.style.display = 'flex';
+    
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.closeCheckout = function() {
+    const modal = document.getElementById('checkout-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.closeProductDetails = function() {
+    const sectionsToReveal = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container'];
+    sectionsToReveal.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.style.display = 'block';
+    });
+    const detailSection = document.getElementById('product-details');
+    if (detailSection) detailSection.style.display = 'none';
+    const productsSection = document.getElementById('products');
+    if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.placeOrder = function() {
+    const titleEl = document.getElementById('detail-title');
+    const priceEl = document.getElementById('detail-price');
+    if (!titleEl || !priceEl) return;
+    const productTitle = titleEl.textContent;
+    const productPrice = priceEl.textContent.trim();
+    const message = encodeURIComponent(`Olá! Gostaria de realizar o pedido do produto:\n📦 *${productTitle}*\n💰 Preço: ${productPrice.replace(/\s+/g, ' ')}\n\nPode me ajudar com a disponibilidade?`);
+    window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
+};
+
+window.submitPayment = async function(event) {
+    event.preventDefault();
+    const product = products.find(p => p.id == currentOpenProductId);
+    if (!product) return;
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Processando...';
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    const orderId = 'ORD-' + Date.now();
+    const orderData = {
+        id: orderId,
+        customer: document.getElementById('checkout-name').value,
+        whatsapp: document.getElementById('checkout-phone').value,
+        items: [{
+            id: product.id,
+            name: product.name,
+            price: product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price,
+            quantity: 1,
+            sku: product.sku
+        }],
+        total: document.getElementById('checkout-total').textContent,
+        status: 'pending',
+        cpf_cnpj: document.getElementById('checkout-cpf').value,
+        email: document.getElementById('checkout-email').value,
+        phone: document.getElementById('checkout-phone').value,
+        cep: document.getElementById('checkout-cep').value,
+        street: document.getElementById('checkout-street').value,
+        number: document.getElementById('checkout-number').value,
+        district: document.getElementById('checkout-district').value,
+        city: document.getElementById('checkout-city').value,
+        uf: document.getElementById('checkout-uf').value,
+        payment_status: 'pending',
+        invoice_status: 'pending'
+    };
+
+    try {
+        const orderResponse = await fetch(`${API_URL}/api/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+
+        if (!orderResponse.ok) throw new Error('Falha ao criar pedido');
+
+        const mpResponse = await fetch(`${API_URL}/api/create-preference`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: orderId, items: orderData.items, customer: orderData.customer, email: orderData.email })
+        });
+
+        if (!mpResponse.ok) throw new Error('Falha no Mercado Pago');
+        const preference = await mpResponse.json();
+        window.location.href = preference.init_point;
+
+    } catch (e) {
+        console.error('Erro no checkout:', e);
+        alert('Erro ao processar o pagamento.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Finalizar Pagamento';
+        }
+    }
+};
+
+window.closeSuccessModal = function() {
+    const modal = document.getElementById('success-modal');
+    if (modal) modal.style.display = 'none';
+    closeProductDetails();
+};
+
+window.searchCEP = async function(cep) {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+            document.getElementById('checkout-street').value = data.logradouro;
+            document.getElementById('checkout-district').value = data.bairro;
+            document.getElementById('checkout-city').value = data.localidade;
+            document.getElementById('checkout-uf').value = data.uf;
+        }
+    } catch (e) {
+        console.error('Erro ao buscar CEP:', e);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
     // Mobile Menu Toggle
     const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
     const nav = document.querySelector('.nav');
@@ -115,11 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
     };
 
-    // Product Data
-    let products = [];
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:3000' 
-        : 'https://api-production-ef9c.up.railway.app'; 
+    // Product Data (Using global products array)
     
     async function loadProducts() {
         let localProducts = [];
@@ -414,10 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    let cart = JSON.parse(localStorage.getItem('bomclima_cart')) || [];
-    let currentUser = JSON.parse(localStorage.getItem('bomclima_user')) || null;
-    let currentOpenProductId = null;
-
+    // Cart & User (Using global variables)
     updateHeaderCartCount();
 
     window.toggleCartSidebar = function() {
@@ -542,61 +731,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error('Erro ao sincronizar pedido:', e); }
     }
 
-    window.showProductDetails = function(productId) {
-        console.log('showProductDetails chamado com ID:', productId);
-        currentOpenProductId = productId;
-        const product = products.find(p => p.id == productId); // Use == for flexible type matching
-        if (!product) {
-            console.error('Produto não encontrado:', productId, 'IDs disponíveis:', products.map(p => p.id));
-            return;
-        }
-        console.log('Produto encontrado:', product.name);
-        const hasPromo = product.promoPrice && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00';
-        const sectionsToHide = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container'];
-        sectionsToHide.forEach(sel => {
-            const el = document.querySelector(sel);
-            if (el) el.style.display = 'none';
-        });
-        const detailSection = document.getElementById('product-details');
-        if (detailSection) detailSection.style.display = 'block';
-        document.getElementById('detail-image').src = product.image;
-        document.getElementById('detail-category').textContent = product.category;
-        document.getElementById('detail-title').textContent = product.name;
-        document.getElementById('detail-price').innerHTML = `
-            ${hasPromo ? `<span style="font-size: 1rem; color: #ef4444; text-decoration: line-through; margin-right: 10px;">${product.price}</span>` : ''}
-            <span>${hasPromo ? product.promoPrice : product.price}</span>
-        `;
-        document.getElementById('detail-rating').innerHTML = getStars(product.rating);
-        const descEl = document.getElementById('detail-description');
-        if (product.description) { descEl.innerHTML = product.description.replace(/rn/g, '<br>').replace(/\\r\\n/g, '<br>'); } 
-        else { descEl.textContent = 'Sem descrição disponível.'; }
-        const specsList = document.getElementById('detail-specs');
-        const stockDisplay = product.stock > 0 ? `${product.stock} unidades` : 'Consulte disponibilidade';
-        specsList.innerHTML = `<li><i data-lucide="hash"></i> SKU: ${product.sku || 'N/A'}</li><li><i data-lucide="tag"></i> Marca: ${product.brand || 'Original'}</li><li><i data-lucide="package"></i> Estoque: ${stockDisplay}</li>`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (window.lucide) window.lucide.createIcons();
-    };
+// --- REVEALED DOM FUNCTIONS ---
+// (Now at top level for reliability, using global variables)
 
-    window.closeProductDetails = function() {
-        const sectionsToReveal = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container'];
-        sectionsToReveal.forEach(sel => {
-            const el = document.querySelector(sel);
-            if (el) el.style.display = 'block';
-        });
-        document.getElementById('product-details').style.display = 'none';
-        const productsSection = document.getElementById('products');
-        if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    window.placeOrder = function() {
-        const productTitle = document.getElementById('detail-title').textContent;
-        const productPrice = document.getElementById('detail-price').textContent.trim();
-        const specsText = document.getElementById('detail-specs').innerText;
-        const skuMatch = specsText.match(/SKU: (.*)/);
-        const sku = skuMatch ? skuMatch[1] : 'N/A';
-        const message = encodeURIComponent(`Olá! Gostaria de realizar o pedido do produto:\n📦 *${productTitle}*\n🔢 SKU: ${sku}\n💰 Preço: ${productPrice.replace(/\s+/g, ' ')}\n\nPode me ajudar com a disponibilidade?`);
-        window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
-    };
+// --- MOVING TO TOP LEVEL ---
 
     renderProducts();
 
@@ -649,154 +787,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initSlider('.hero-slider:not(.brands-slider)');
     initSlider('.brands-slider');
 
-    window.openCheckout = function() {
-        console.log('openCheckout chamado. currentOpenProductId:', currentOpenProductId);
-        if (!currentOpenProductId) {
-            console.error('currentOpenProductId está nulo!');
-            return;
-        }
-        const product = products.find(p => p.id == currentOpenProductId); // Use ==
-        if (!product) {
-            console.error('Produto não encontrado no array products para o ID:', currentOpenProductId);
-            return;
-        }
-        
-        const priceStr = product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price;
-        const totalEl = document.getElementById('checkout-total');
-        if (totalEl) totalEl.textContent = priceStr;
-        
-        // Auto-fill from current user if exists
-        if (currentUser) {
-            const nameField = document.getElementById('checkout-name');
-            const phoneField = document.getElementById('checkout-phone');
-            if (nameField) nameField.value = currentUser.name || '';
-            if (phoneField) phoneField.value = currentUser.whatsapp || '';
-        }
-        
-        const modal = document.getElementById('checkout-modal');
-        if (modal) {
-            modal.style.display = 'flex';
-            console.log('Modal aberto com sucesso.');
-        } else {
-            console.error('Elemento #checkout-modal não encontrado no DOM!');
-        }
-        
-        if (window.lucide) window.lucide.createIcons();
-    };
-
-    window.closeCheckout = function() {
-        document.getElementById('checkout-modal').style.display = 'none';
-    };
-
-    window.searchCEP = async function(cep) {
-        const cleanCep = cep.replace(/\D/g, '');
-        if (cleanCep.length !== 8) return;
-        
-        try {
-            const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-            const data = await response.json();
-            if (!data.erro) {
-                document.getElementById('checkout-street').value = data.logradouro;
-                document.getElementById('checkout-district').value = data.bairro;
-                document.getElementById('checkout-city').value = data.localidade;
-                document.getElementById('checkout-uf').value = data.uf;
-                document.getElementById('checkout-number').focus();
-            }
-        } catch (e) {
-            console.error('Erro ao buscar CEP:', e);
-        }
-    };
-
-    window.submitPayment = async function(event) {
-        event.preventDefault();
-        const product = products.find(p => p.id == currentOpenProductId);
-        if (!product) {
-            console.error('Produto não encontrado ao enviar pagamento:', currentOpenProductId);
-            return;
-        }
-
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Processando...';
-            if (window.lucide) window.lucide.createIcons();
-        }
-
-        const orderId = 'ORD-' + Date.now();
-        const orderData = {
-            id: orderId,
-            customer: document.getElementById('checkout-name').value,
-            whatsapp: document.getElementById('checkout-phone').value,
-            items: [{
-                id: product.id,
-                name: product.name,
-                price: product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price,
-                quantity: 1,
-                sku: product.sku
-            }],
-            total: document.getElementById('checkout-total').textContent,
-            status: 'pending', // Starts as pending now
-            cpf_cnpj: document.getElementById('checkout-cpf').value,
-            email: document.getElementById('checkout-email').value,
-            phone: document.getElementById('checkout-phone').value,
-            cep: document.getElementById('checkout-cep').value,
-            street: document.getElementById('checkout-street').value,
-            number: document.getElementById('checkout-number').value,
-            district: document.getElementById('checkout-district').value,
-            city: document.getElementById('checkout-city').value,
-            uf: document.getElementById('checkout-uf').value,
-            payment_status: 'pending',
-            invoice_status: 'pending'
-        };
-
-        try {
-            // 1. Create Order in our DB
-            const orderResponse = await fetch(`${API_URL}/api/orders`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            });
-
-            if (!orderResponse.ok) throw new Error('Falha ao criar pedido no servidor');
-
-            // 2. Create MP Preference
-            const mpResponse = await fetch(`${API_URL}/api/create-preference`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: orderId,
-                    items: orderData.items,
-                    customer: orderData.customer,
-                    email: orderData.email
-                })
-            });
-
-            if (!mpResponse.ok) throw new Error('Falha ao criar preferência de pagamento');
-            
-            const preference = await mpResponse.json();
-            
-            // 3. Redirect to Mercado Pago Checkout
-            window.location.href = preference.init_point;
-
-        } catch (e) {
-            console.error('Erro no checkout:', e);
-            alert('Erro ao processar o pagamento. Por favor, tente novamente.');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Finalizar Pagamento';
-            }
-        }
-    };
-
-    window.closeSuccessModal = function() {
-        document.getElementById('success-modal').style.display = 'none';
-        const name = document.getElementById('checkout-name').value;
-        const total = document.getElementById('checkout-total').textContent;
-        const message = encodeURIComponent(`Olá! Acabei de realizar o pagamento do pedido no valor de ${total}. Meu nome é ${name}. Aguardo a confirmação!`);
-        window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
-        closeProductDetails();
-    };
-
     if (typeof AOS !== 'undefined') { AOS.init({ duration: 800, once: true, offset: 100 }); }
-
 });
