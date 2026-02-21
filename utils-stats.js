@@ -1,3 +1,4 @@
+console.log('Utils-stats carregado com sucesso');
 /**
  * Utilitários para cálculos financeiros e estatísticas do estoque
  */

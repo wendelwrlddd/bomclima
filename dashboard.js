@@ -1,5 +1,7 @@
 
-import { calculateStockTotalValue, formatCurrency } from './utils-stats.js';
+import { calculateStockTotalValue, formatCurrency } from './utils-stats.js?v=4';
+
+console.log('Dashboard JS carregado v4');
 
 const FULL_CATEGORIES = [
     "Sem categoria", "BOBINA MAGUINETICA P/C TM15/TM16 24", "Bobina para compressor", "Caixa de teto", 
