@@ -594,40 +594,32 @@ class Dashboard {
         }
         
         let totalValue = 0;
-        console.log('--- RECALCULANDO ESTOQUE (VERSÃO ULTRA-ROBUSTA) ---');
+        console.log('--- CALCULANDO VALOR TOTAL DO ESTOQUE (PRODUTOS ATIVOS) ---');
 
         this.products.forEach(p => {
-            // 1. Normalizar Estoque (Garantir que seja número inteiro limpo)
-            // Se vier como string "1.000", remove o ponto de milhar para não ser lido como 1.0
+            // 1. Normalizar Estoque
             let stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
-            // Se contiver ponto e vírgula, é Brasileiro. Se só ponto e for string, perigo.
-            // Para estoque, removemos tudo que não for dígito.
             const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
             
             // 2. Normalizar Status
             const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
             const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
 
-            // 3. FILTROS DE VALIDAÇÃO
-            // - Deve ter estoque > 0
-            // - Não pode estar em 'offbackorder' ou 'outofstock'
-            // - Deve estar com status 'publish' (se o campo existir)
+            // 3. FILTROS RIGOROSOS (Conforme solicitado pelo usuário):
+            // - Pular se NÃO for 'instock' (isso remove automaticamente 'onbackorder' e 'outofstock')
+            // - Pular se a quantidade for 0 ou menor
+            // - Pular se o produto não estiver publicado
+            if (stockStatus !== 'instock') return;
             if (qty <= 0) return;
-            if (stockStatus === 'onbackorder' || stockStatus === 'outofstock' || stockStatus === 'unavailable') return;
             if (publishStatus !== 'publish') return;
 
-            // 4. Normalizar Preço (Tratar R$ 1.500,00 ou 1500.00)
+            // 4. Normalizar Preço
             const parsePrice = (val) => {
-                if (val === undefined || val === null || val === '') return 0;
+                if (!val) return 0;
                 let str = val.toString().trim();
-                if (str === '0,00' || str === '0.00' || str === '0') return 0;
-
-                // Se tiver vírgula, tratamos como formato BR (1.500,00)
                 if (str.includes(',')) {
-                    // Remove tudo exceto dígitos e a vírgula decimal
                     str = str.replace(/[^\d,]/g, '').replace(',', '.');
                 } else {
-                    // Se não tiver vírgula, removemos tudo exceto dígitos e ponto decimal
                     str = str.replace(/[^\d.]/g, '');
                 }
                 return parseFloat(str) || 0;
@@ -635,8 +627,6 @@ class Dashboard {
 
             const price = parsePrice(p.price);
             const promo = parsePrice(p.promoPrice);
-
-            // 5. Decidir qual preço usar (Prioriza promo se for > 0)
             let finalPrice = (promo > 0) ? promo : price;
             
             if (finalPrice > 0) {
@@ -652,7 +642,6 @@ class Dashboard {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-            console.log('Cálculo finalizado. Novo Valor Total:', stockEl.textContent);
         }
 
         if (document.getElementById('totalCategories')) {
@@ -661,6 +650,7 @@ class Dashboard {
             document.getElementById('totalCategories').textContent = uniqueCats.length;
         }
     }
+
 
 }
 
