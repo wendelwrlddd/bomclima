@@ -107,7 +107,8 @@ window.openCheckout = async function() {
                 id: orderId, 
                 items: orderData.items, 
                 customer: orderData.customer, 
-                email: 'cliente@bomclima.com.br' // Placeholder
+                // Don't hardcode email, let backend handle it or use a unique one per order
+                email: `venda-${Date.now()}@bomclima.com.br` 
             })
         });
 

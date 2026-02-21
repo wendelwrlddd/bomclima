@@ -463,7 +463,7 @@ app.post('/api/create-preference', async (req, res) => {
             external_reference: id,
             payer: {
                 name: customer,
-                email: email || 'test_user_123@testuser.com', // Fallback for testing
+                email: email || `checkout-${id}@test.com`, // Unique fallback to avoid sandbox conflicts
             }
         };
 
