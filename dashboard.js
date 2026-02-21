@@ -37,7 +37,8 @@ const FULL_CATEGORIES = [
 class Dashboard {
     constructor() {
         this.products = [];
-        this.history = JSON.parse(localStorage.getItem('bomclima_history')) || [];
+        this.history = [];
+        this.orders = [];
         this.filteredProducts = [];
         this.currentView = 'dashboard';
         this.API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -78,7 +79,7 @@ class Dashboard {
         let localProducts = [];
         let apiProducts = [];
 
-        // 1. Load from local JSON (Fallback source)
+        // 1. Load from local JSON (Fallback source for static products)
         try {
             const response = await fetch('./products_data.json');
             if (response.ok) {
@@ -88,17 +89,26 @@ class Dashboard {
             localProducts = JSON.parse(localStorage.getItem('bomclima_products')) || [];
         }
 
-        // 2. Load from API
+        // 2. Load everything from API
         try {
-            const response = await fetch(`${this.API_URL}/api/products`);
-            if (response.ok) {
-                apiProducts = await response.json();
-            }
+            const [prodRes, histRes, ordRes] = await Promise.all([
+                fetch(`${this.API_URL}/api/products`),
+                fetch(`${this.API_URL}/api/history`),
+                fetch(`${this.API_URL}/api/orders`)
+            ]);
+
+            if (prodRes.ok) apiProducts = await prodRes.json();
+            if (histRes.ok) this.history = await histRes.json();
+            if (ordRes.ok) this.orders = await ordRes.json();
+            
         } catch (error) {
-            console.error('Erro ao conectar com API:', error);
+            console.error('Erro ao carregar dados da API:', error);
+            // Fallbacks for offline use
+            this.history = JSON.parse(localStorage.getItem('bomclima_history')) || [];
+            this.orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
         }
 
-        // 3. Merge
+        // 3. Merge Products
         const mergedMap = new Map();
         localProducts.forEach(p => mergedMap.set(p.id.toString(), p));
         apiProducts.forEach(p => mergedMap.set(p.id.toString(), p));
@@ -108,11 +118,12 @@ class Dashboard {
     }
 
     async save() {
-        // Stats and local sync
         this.updateStats();
         this.populateCategoryFilter();
+        // Sync local for quick reload fallback
         localStorage.setItem('bomclima_products', JSON.stringify(this.products));
         localStorage.setItem('bomclima_history', JSON.stringify(this.history));
+        localStorage.setItem('bomclima_pending_orders', JSON.stringify(this.orders));
     }
 
     setupTabs() {
@@ -164,12 +175,10 @@ class Dashboard {
     }
 
     handleOrderNotification() {
-        const orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
         const badge = document.getElementById('orderBadge');
-        if (badge && orders.length > 0) {
-            // Check if there's any order updated in the last 5 minutes
+        if (badge && this.orders.length > 0) {
             const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
-            const hasRecent = orders.some(o => new Date(o.lastUpdate) > fiveMinsAgo);
+            const hasRecent = this.orders.some(o => new Date(o.lastUpdate) > fiveMinsAgo);
             if (hasRecent && this.currentView !== 'orders') {
                 badge.style.display = 'block';
             }
@@ -179,18 +188,17 @@ class Dashboard {
     renderOrders() {
         if (this.currentView !== 'orders') return;
         
-        const orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
         const tableBody = document.getElementById('ordersTableBody');
         const activeCount = document.getElementById('activeCartsCount');
         
-        if (activeCount) activeCount.textContent = orders.length;
+        if (activeCount) activeCount.textContent = this.orders.length;
 
-        if (orders.length === 0) {
+        if (this.orders.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">Nenhum pedido ou carrinho ativo no momento.</td></tr>';
             return;
         }
 
-        tableBody.innerHTML = orders.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate)).map(o => `
+        tableBody.innerHTML = this.orders.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate)).map(o => `
             <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
                 <td style="padding: 1rem 1.5rem; font-weight: 600;">${o.customer}</td>
                 <td style="padding: 1rem 1.5rem;">${o.whatsapp}</td>
@@ -225,12 +233,16 @@ class Dashboard {
         window.open(`https://wa.me/55${cleanWpp}?text=${message}`, '_blank');
     }
 
-    deleteOrder(id) {
+    async deleteOrder(id) {
         if (confirm('Deseja remover este registro de pedido?')) {
-            let orders = JSON.parse(localStorage.getItem('bomclima_pending_orders')) || [];
-            orders = orders.filter(o => o.id !== id);
-            localStorage.setItem('bomclima_pending_orders', JSON.stringify(orders));
-            this.renderOrders();
+            try {
+                await fetch(`${this.API_URL}/api/orders/${id}`, { method: 'DELETE' });
+                this.orders = this.orders.filter(o => o.id != id);
+                this.renderOrders();
+                this.save();
+            } catch (e) {
+                console.error('Erro ao deletar pedido:', e);
+            }
         }
     }
 
@@ -265,18 +277,30 @@ class Dashboard {
         return `Publicado ${day}/${month}/${year} às ${hours}:${minutes}`;
     }
 
-    logEvent(type, product, details = '') {
+    async logEvent(type, product, details = '') {
         const event = {
             id: Date.now(),
-            type, // 'create', 'edit', 'delete'
+            type, 
             productName: product.name,
             productId: product.id,
             details,
             timestamp: new Date().toISOString()
         };
+        
         this.history.unshift(event);
         if (this.history.length > 100) this.history.pop();
+        this.renderHistory();
         this.save();
+
+        try {
+            await fetch(`${this.API_URL}/api/history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(event)
+            });
+        } catch (e) {
+            console.error('Erro ao salvar evento no servidor:', e);
+        }
     }
 
     render() {

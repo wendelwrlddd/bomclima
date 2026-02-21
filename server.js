@@ -71,6 +71,18 @@ async function initDB(conn) {
                 lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS events (
+                id BIGINT PRIMARY KEY,
+                type VARCHAR(50),
+                productName VARCHAR(255),
+                productId BIGINT,
+                details TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('✅ Tabelas verificadas/atualizadas com sucesso');
     } catch (err) {
         console.error('❌ Erro ao inicializar banco:', err.message);
@@ -151,37 +163,27 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
-// Analytics Route
-app.get('/api/movements/summary', async (req, res) => {
+// Routes — History/Events
+app.get('/api/history', async (req, res) => {
     try {
-        const [rows] = await q(`
-            SELECT 
-                type, 
-                SUM(quantity) as items, 
-                SUM(quantity * price) as total 
-            FROM movements 
-            WHERE MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE())
-            GROUP BY type
-        `);
+        const [rows] = await q('SELECT * FROM events ORDER BY timestamp DESC LIMIT 100');
         res.json(rows);
     } catch (err) {
-        console.error('GET /api/movements/summary error:', err.message);
+        console.error('GET /api/history error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-app.get('/api/movements', async (req, res) => {
+app.post('/api/history', async (req, res) => {
+    const { id, type, productName, productId, details } = req.body;
     try {
-        const [rows] = await q(`
-            SELECT m.*, p.name as productName 
-            FROM movements m 
-            JOIN products p ON m.productId = p.id 
-            ORDER BY m.date DESC 
-            LIMIT 50
-        `);
-        res.json(rows);
+        await q(
+            'INSERT INTO events (id, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE type=?, productName=?, productId=?, details=?',
+            [id, type, productName, productId, details, type, productName, productId, details]
+        );
+        res.json({ success: true });
     } catch (err) {
-        console.error('GET /api/movements error:', err.message);
+        console.error('POST /api/history error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -207,6 +209,16 @@ app.post('/api/orders', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('POST /api/orders error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/orders/:id', async (req, res) => {
+    try {
+        await q('DELETE FROM orders WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('DELETE /api/orders error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
