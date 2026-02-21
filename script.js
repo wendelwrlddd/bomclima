@@ -56,30 +56,77 @@ window.showProductDetails = function(productId) {
     if (window.lucide) window.lucide.createIcons();
 };
 
-window.openCheckout = function() {
-    console.log('openCheckout chamado. currentOpenProductId:', currentOpenProductId);
+window.openCheckout = async function() {
+    console.log('openCheckout (Direto) chamado. ID:', currentOpenProductId);
     if (!currentOpenProductId) return;
     const product = products.find(p => p.id == currentOpenProductId);
     if (!product) return;
-    
-    const priceStr = product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price;
-    const totalEl = document.getElementById('checkout-total');
-    if (totalEl) totalEl.textContent = priceStr;
-    
-    // Auto-fill from current user if exists
-    if (currentUser) {
-        const nameField = document.getElementById('checkout-name');
-        const phoneField = document.getElementById('checkout-phone');
-        const emailField = document.getElementById('checkout-email');
-        if (nameField) nameField.value = currentUser.name || '';
-        if (phoneField) phoneField.value = currentUser.whatsapp || '';
-        if (emailField) emailField.value = currentUser.email || '';
+
+    // Visual feedback on the button
+    const buyBtn = document.querySelector('.btn-buy');
+    let originalText = 'Pagar';
+    if (buyBtn) {
+        originalText = buyBtn.innerHTML;
+        buyBtn.disabled = true;
+        buyBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Processando...';
+        if (window.lucide) window.lucide.createIcons();
     }
 
-    const modal = document.getElementById('checkout-modal');
-    if (modal) modal.style.display = 'flex';
-    
-    if (window.lucide) window.lucide.createIcons();
+    const orderId = 'ORD-' + Date.now();
+    const orderData = {
+        id: orderId,
+        customer: 'Cliente BomClima', // Placeholder, user fills in MP
+        whatsapp: '',
+        items: [{
+            id: product.id,
+            name: product.name,
+            price: product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price,
+            quantity: 1,
+            sku: product.sku
+        }],
+        total: product.promoPrice && product.promoPrice !== 'R$ 0,00' ? product.promoPrice : product.price,
+        status: 'pending',
+        payment_status: 'pending'
+    };
+
+    try {
+        // 1. Create order on backend (Railway)
+        const orderResponse = await fetch(`${API_URL}/api/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+
+        if (!orderResponse.ok) throw new Error('Falha ao criar pedido');
+
+        // 2. Create MP Preference
+        const mpResponse = await fetch(`${API_URL}/api/create-preference`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id: orderId, 
+                items: orderData.items, 
+                customer: orderData.customer, 
+                email: 'cliente@bomclima.com.br' // Placeholder
+            })
+        });
+
+        if (!mpResponse.ok) throw new Error('Falha no Mercado Pago');
+        
+        const preference = await mpResponse.json();
+        
+        // 3. Redirect to Mercado Pago Pro Checkout
+        window.location.href = preference.init_point;
+
+    } catch (e) {
+        console.error('Erro no checkout direto:', e);
+        alert('Erro ao iniciar o pagamento. Tente novamente.');
+        if (buyBtn) {
+            buyBtn.disabled = false;
+            buyBtn.innerHTML = originalText;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
 };
 
 window.closeCheckout = function() {
