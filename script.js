@@ -649,6 +649,130 @@ document.addEventListener('DOMContentLoaded', () => {
         if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // --- Contact Section Logic (NEW) ---
+    
+    window.openContactSection = function() {
+        // Hide main homepage sections
+        const sectionsToHide = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container', '#products'];
+        sectionsToHide.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.classList.add('hidden');
+        });
+
+        // Ensure product details is hidden
+        document.getElementById('product-details').style.display = 'none';
+
+        // Show contact section
+        const contactSection = document.getElementById('contact-full-section');
+        contactSection.style.display = 'block';
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Initialize Calendar
+        initCalendar();
+        
+        if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.closeContactSection = function() {
+        // Show main sections
+        const elementsToReveal = document.querySelectorAll('.hidden');
+        elementsToReveal.forEach(el => el.classList.remove('hidden'));
+
+        // Hide contact section
+        document.getElementById('contact-full-section').style.display = 'none';
+        
+        // Scroll back to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Update Nav Links to handle Contact
+    const contactLinks = document.querySelectorAll('a[href="#contact"]');
+    contactLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            openContactSection();
+        });
+    });
+
+    // Calendar Logic
+    let currentDate = new Date();
+    let selectedDate = null;
+
+    function initCalendar() {
+        renderCalendar();
+        
+        document.getElementById('prev-month').onclick = () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        };
+        document.getElementById('next-month').onclick = () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        };
+    }
+
+    function renderCalendar() {
+        const monthYear = document.getElementById('current-month-year');
+        const daysContainer = document.getElementById('calendar-days');
+        
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        monthYear.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(currentDate);
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        daysContainer.innerHTML = '';
+        
+        // Empty slots for first week
+        for (let i = 0; i < firstDay; i++) {
+            daysContainer.innerHTML += '<div></div>';
+        }
+        
+        const today = new Date();
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+            const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+            const isSelected = selectedDate && selectedDate.getDate() === d && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
+            
+            const dayEl = document.createElement('div');
+            dayEl.className = `calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
+            dayEl.textContent = d;
+            
+            // Disable past dates
+            const checkDate = new Date(year, month, d);
+            if (checkDate < today.setHours(0,0,0,0)) {
+                dayEl.classList.add('disabled');
+            } else {
+                dayEl.onclick = () => selectDate(year, month, d);
+            }
+            
+            daysContainer.appendChild(dayEl);
+        }
+    }
+
+    function selectDate(y, m, d) {
+        selectedDate = new Date(y, m, d);
+        renderCalendar();
+        
+        const feedback = document.getElementById('schedule-feedback');
+        const text = document.getElementById('selected-date-text');
+        
+        feedback.style.display = 'flex';
+        text.textContent = `Data: ${selectedDate.toLocaleDateString('pt-BR')}`;
+    }
+
+    window.sendScheduleRequest = function() {
+        if (!selectedDate) return;
+        
+        const dateStr = selectedDate.toLocaleDateString('pt-BR');
+        const message = encodeURIComponent(`Olá! Gostaria de agendar uma manutenção/revisão na Bom Clima para a data: *${dateStr}*. Como podemos confirmar?`);
+        window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
+    };
+
     window.placeOrder = function() {
         const productTitle = document.getElementById('detail-title').textContent;
         const productPrice = document.getElementById('detail-price').textContent.trim();

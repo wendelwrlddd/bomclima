@@ -175,6 +175,122 @@
         </div>
     </section>
 
+    <!-- Contact Page Section (NEW) -->
+    <section id="contact-full-section" class="contact-full-section" style="display: none;">
+        <div class="container">
+            <div class="back-link-wrapper">
+                <a href="javascript:void(0)" class="back-link" onclick="closeContactSection()">
+                    <i data-lucide="arrow-left"></i> Voltar para Início
+                </a>
+            </div>
+
+            <div class="section-header" data-aos="fade-up">
+                <h2 class="section-title">Canais de Atendimento</h2>
+                <div class="section-line"></div>
+                <p class="section-description">Escolha a melhor forma de falar com a nossa equipe especializada.</p>
+            </div>
+
+            <div class="contact-grid">
+                <!-- Card: Ligar -->
+                <div class="contact-card call" data-aos="zoom-in" onclick="window.location.href='tel:+557333018435'">
+                    <div class="card-icon-main">📞</div>
+                    <h3>Ligar</h3>
+                    <p>Fale conosco agora</p>
+                    <span class="card-action">Chamar via Telefone</span>
+                </div>
+
+                <!-- Card: Vendas WhatsApp -->
+                <div class="contact-card whatsapp" data-aos="zoom-in" data-aos-delay="100" onclick="window.open('https://wa.me/557381203737', '_blank')">
+                    <div class="card-icon-main">💬</div>
+                    <h3>Vendas</h3>
+                    <p>Atendimento Comercial</p>
+                    <span class="card-action">Abrir no WhatsApp</span>
+                </div>
+
+                <!-- Card: Instagram -->
+                <div class="contact-card instagram" data-aos="zoom-in" data-aos-delay="200" onclick="window.open('https://www.instagram.com/bomclima.tec', '_blank')">
+                    <div class="card-icon-main">📸</div>
+                    <h3>Instagram</h3>
+                    <p>Siga nossas novidades</p>
+                    <span class="card-action">Acessar Perfil</span>
+                </div>
+
+                <!-- Card: Agendar (Calendar) -->
+                <div class="contact-card scheduler" data-aos="zoom-in" data-aos-delay="300">
+                    <h3>📅 Agendar Revisão</h3>
+                    <p>Selecione uma data disponível</p>
+                    
+                    <div class="calendar-wrapper">
+                        <div class="calendar-header">
+                            <button id="prev-month"><i data-lucide="chevron-left"></i></button>
+                            <h4 id="current-month-year">Fevereiro 2026</h4>
+                            <button id="next-month"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                        <div class="calendar-grid-header">
+                            <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+                        </div>
+                        <div id="calendar-days" class="calendar-grid">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+                    <div id="schedule-feedback" class="schedule-feedback" style="display: none;">
+                        <span id="selected-date-text"></span>
+                        <button class="btn btn-primary btn-sm" onclick="sendScheduleRequest()">Confirmar com Suporte</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="maintenance-services-section" style="margin-top: 5rem;">
+                <div class="section-header" data-aos="fade-up">
+                    <h2 class="section-title">Especialistas em Climatização</h2>
+                    <div class="section-line"></div>
+                </div>
+
+                <div class="maintenance-grid">
+                    <div class="maintenance-item" data-aos="fade-right">
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato-1.jpg" alt="Manutenção de Máquinas Pesadas">
+                        </div>
+                        <div class="maintenance-text-box">
+                            <h3>Linha Amarela & Agrícola</h3>
+                            <p>Especialistas em sistemas de ar condicionado para maquinário pesado. Realizamos diagnósticos e reparos em tratores, escavadeiras e retroescavadeiras, garantindo que sua produtividade não pare por falta de conforto térmico.</p>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item alternate" data-aos="fade-left">
+                        <div class="maintenance-text-box">
+                            <h3>Logística e Almoxarifado</h3>
+                            <p>Contamos com uma estrutura administrativa robusta e um almoxarifado organizado com milhares de itens à pronta entrega. Essa organização nos permite agilizar o serviço e oferecer o menor tempo de espera da região.</p>
+                        </div>
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato-2.jpg" alt="Gestão de Estoque">
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item" data-aos="fade-right">
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato-3.jpg" alt="Atendimento e Recepção">
+                        </div>
+                        <div class="maintenance-text-box">
+                            <h3>Suporte Administrativo</h3>
+                            <p>Nossa recepção oferece um atendimento humanizado e técnico para orçamentos e consultorias. Transparência e agilidade são os pilares que sustentam nossos mais de 10 anos de história em Itabuna.</p>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item alternate" data-aos="fade-left">
+                        <div class="maintenance-text-box">
+                            <h3>Atendimento em Campo</h3>
+                            <p>Levamos a nossa oficina até você. Nossa frota de suporte móvel está equipada com ferramentas de última geração para realizar manutenções preventivas e corretivas em obras e frentes de serviço diretamente no local.</p>
+                        </div>
+                        <div class="maintenance-img-box">
+                            <img src="./images/contato-4.jpg" alt="Suporte Externo">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div class="container main-content-wrapper">
             <h2 class="section-title">TUDO EM AR CONDICIONADO AUTOMOTIVO</h2>
             <div class="featured-slider-container">
@@ -460,7 +576,7 @@
     </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script type="module" src="./script.js"></script>
+    <script type="module" src="./script.js?v=2"></script>
     <script>
         lucide.createIcons();
     </script>
