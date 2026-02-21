@@ -19,8 +19,18 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 
-// Database - auto-reconnecting single connection
-let db;
+// Global process error logging
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Rejeição não tratada em:', promise, 'razão:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('❌ Exceção não capturada:', err);
+});
+
+// Fallback in-memory storage for when DB is unavailable
+let memProducts = [];
+let memOrders = [];
+let memEvents = [];
 
 // Connection string prioritization: 
 // 1. MYSQL_URL environment variable (Railway provided)
@@ -38,28 +48,23 @@ const MYSQL_URL = getDBUrl();
 
 async function initDB(conn) {
     try {
+        // 1. Create tables first
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS products (
                 id BIGINT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 categories TEXT,
-                price VARCHAR(50),
-                promoPrice VARCHAR(50),
+                price VARCHAR(100),
+                promoPrice VARCHAR(100),
                 stock INT DEFAULT 0,
-                stockStatus VARCHAR(50),
+                stockStatus VARCHAR(100),
                 imageName LONGTEXT,
                 description TEXT,
                 sku VARCHAR(100),
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        // Upgrade existing columns if needed
-        const [cols] = await conn.execute("SHOW COLUMNS FROM products");
-        if (!cols.find(c => c.Field === 'sku')) {
-            await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
-        }
-        await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
-        
+
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS orders (
                 id VARCHAR(255) PRIMARY KEY,
@@ -68,6 +73,17 @@ async function initDB(conn) {
                 items TEXT,
                 total DECIMAL(10,2),
                 status VARCHAR(50),
+                cpf_cnpj VARCHAR(20),
+                email VARCHAR(255),
+                phone VARCHAR(50),
+                cep VARCHAR(10),
+                street VARCHAR(255),
+                number VARCHAR(50),
+                district VARCHAR(100),
+                city VARCHAR(100),
+                uf VARCHAR(2),
+                payment_status VARCHAR(50),
+                invoice_status VARCHAR(50),
                 lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -83,9 +99,31 @@ async function initDB(conn) {
             )
         `);
 
+        // 2. Upgrade existing columns if needed
+        const [prodCols] = await conn.execute("SHOW COLUMNS FROM products");
+        if (!prodCols.find(c => c.Field === 'sku')) {
+            await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
+        }
+        
+        const [orderCols] = await conn.execute("SHOW COLUMNS FROM orders");
+        const newCols = [
+            'cpf_cnpj VARCHAR(20)', 'email VARCHAR(255)', 'phone VARCHAR(50)', 
+            'cep VARCHAR(10)', 'street VARCHAR(255)', 'number VARCHAR(50)', 
+            'district VARCHAR(100)', 'city VARCHAR(100)', 'uf VARCHAR(2)',
+            'payment_status VARCHAR(50)', 'invoice_status VARCHAR(50)'
+        ];
+
+        for (const colDef of newCols) {
+            const colName = colDef.split(' ')[0];
+            if (!orderCols.find(c => c.Field === colName)) {
+                await conn.execute(`ALTER TABLE orders ADD COLUMN ${colDef}`);
+                console.log(`✅ Coluna adicionada: ${colName}`);
+            }
+        }
+
         console.log('✅ Tabelas verificadas/atualizadas com sucesso');
     } catch (err) {
-        console.error('❌ Erro ao inicializar banco:', err.message);
+        console.error('❌ Erro ao inicializar banco:', err);
     }
 }
 
@@ -116,6 +154,9 @@ async function getDB() {
 
 async function q(sql, params = []) {
     const conn = await getDB();
+    if (!conn) {
+        throw new Error('Banco de dados indisponível. Verifique a conexão.');
+    }
     return conn.execute(sql, params);
 }
 
@@ -125,8 +166,8 @@ app.get('/api/products', async (req, res) => {
         const [rows] = await q('SELECT * FROM products ORDER BY id DESC');
         res.json(rows);
     } catch (err) {
-        console.error('GET /api/products error:', err.message);
-        res.status(500).json({ error: err.message });
+        console.warn('⚠️ Usando fallback de memória para GET /api/products');
+        res.json(memProducts);
     }
 });
 
@@ -148,8 +189,15 @@ app.post('/api/products', async (req, res) => {
             res.json({ success: true, message: 'Produto criado', id: newId });
         }
     } catch (err) {
-        console.error('POST /api/products error:', err.message, err.code);
-        res.status(500).json({ error: err.message });
+        console.warn('⚠️ Salvando em memória: POST /api/products');
+        if (id) {
+            const idx = memProducts.findIndex(p => p.id == id);
+            if (idx !== -1) memProducts[idx] = { ...memProducts[idx], ...req.body };
+        } else {
+            const newProd = { ...req.body, id: Date.now() };
+            memProducts.push(newProd);
+        }
+        res.json({ success: true, message: 'Salvo em memória (DB offline)' });
     }
 });
 
@@ -169,8 +217,8 @@ app.get('/api/history', async (req, res) => {
         const [rows] = await q('SELECT * FROM events ORDER BY timestamp DESC LIMIT 100');
         res.json(rows);
     } catch (err) {
-        console.error('GET /api/history error:', err.message);
-        res.status(500).json({ error: err.message });
+        console.warn('⚠️ Usando fallback de memória para GET /api/history');
+        res.json(memEvents);
     }
 });
 
@@ -183,8 +231,11 @@ app.post('/api/history', async (req, res) => {
         );
         res.json({ success: true });
     } catch (err) {
-        console.error('POST /api/history error:', err.message);
-        res.status(500).json({ error: err.message });
+        console.warn('⚠️ Salvando em memória: POST /api/history');
+        const newEvent = { id, type, productName, productId, details, timestamp: new Date().toISOString() };
+        memEvents.unshift(newEvent); // Add to beginning
+        if (memEvents.length > 100) memEvents.pop();
+        res.json({ success: true, message: 'Evento salvo em memória' });
     }
 });
 
@@ -194,21 +245,116 @@ app.get('/api/orders', async (req, res) => {
         const [rows] = await q('SELECT * FROM orders ORDER BY lastUpdate DESC');
         res.json(rows);
     } catch (err) {
-        console.error('GET /api/orders error:', err.message);
-        res.status(500).json({ error: err.message });
+        console.warn('⚠️ Usando fallback de memória para GET /api/orders');
+        res.json(memOrders);
     }
 });
-
 app.post('/api/orders', async (req, res) => {
-    const { id, customer, whatsapp, items, total, status } = req.body;
+    const orderDataReceived = req.body;
+    console.log('📦 Novo pedido recebido:', JSON.stringify(orderDataReceived, null, 2));
+
+    const { 
+        id, customer, whatsapp, items, total, status,
+        cpf_cnpj, email, phone, cep, street, number, district, city, uf,
+        payment_status, invoice_status 
+    } = orderDataReceived;
+    
+    // Clean total string to decimal safely
+    let cleanTotal = 0;
+    if (total) {
+        if (typeof total === 'string') {
+            const numericValue = total.replace(/[^\d,]/g, '').replace(',', '.');
+            cleanTotal = parseFloat(numericValue) || 0;
+        } else {
+            cleanTotal = total;
+        }
+    }
+
     try {
         await q(
-            'INSERT INTO orders (id, customer, whatsapp, items, total, status, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE customer=?, whatsapp=?, items=?, total=?, status=?, lastUpdate=NOW()',
-            [id, customer, whatsapp, JSON.stringify(items), total, status, customer, whatsapp, JSON.stringify(items), total, status]
+            `INSERT INTO orders (
+                id, customer, whatsapp, items, total, status, 
+                cpf_cnpj, email, phone, cep, street, number, district, city, uf, 
+                payment_status, invoice_status, lastUpdate
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) 
+            ON DUPLICATE KEY UPDATE 
+                customer=?, whatsapp=?, items=?, total=?, status=?, 
+                cpf_cnpj=?, email=?, phone=?, cep=?, street=?, number=?, district=?, city=?, uf=?, 
+                payment_status=?, invoice_status=?, lastUpdate=NOW()`,
+            [
+                id, customer, whatsapp, JSON.stringify(items || []), cleanTotal, status || 'pending',
+                cpf_cnpj || null, email || null, phone || null, cep || null, street || null, number || null, district || null, city || null, uf || null,
+                payment_status || 'paid', invoice_status || 'pending',
+                customer, whatsapp, JSON.stringify(items || []), cleanTotal, status || 'pending',
+                cpf_cnpj || null, email || null, phone || null, cep || null, street || null, number || null, district || null, city || null, uf || null,
+                payment_status || 'paid', invoice_status || 'pending'
+            ]
         );
         res.json({ success: true });
     } catch (err) {
-        console.error('POST /api/orders error:', err.message);
+        console.warn('⚠️ Salvando em memória: POST /api/orders');
+        const idx = memOrders.findIndex(o => o.id == id);
+        if (idx !== -1) {
+            memOrders[idx] = { ...memOrders[idx], ...orderDataReceived, lastUpdate: new Date().toISOString() };
+        } else {
+            memOrders.push({ ...orderDataReceived, lastUpdate: new Date().toISOString() });
+        }
+        res.json({ success: true, message: 'Salvo em memória (DB offline)' });
+    }
+});
+
+app.post('/api/invoices', async (req, res) => {
+    const { orderId } = req.body;
+    try {
+        let order;
+        try {
+            const [rows] = await q('SELECT * FROM orders WHERE id = ?', [orderId]);
+            if (rows.length > 0) order = rows[0];
+        } catch (dbErr) {
+            order = memOrders.find(o => o.id == orderId);
+        }
+
+        if (!order) return res.status(404).json({ error: 'Pedido não encontrado' });
+        
+        const emitter = {
+            cnpj: "12345678000195",
+            razao_social: "BOM CLIMA AR CONDICIONADO LTDA",
+            ie: "123456789",
+            regime: "1",
+            address: { city: "Itabuna", uf: "BA" }
+        };
+
+        const invoiceData = {
+            emitter,
+            customer: {
+                name: order.customer,
+                cpf_cnpj: order.cpf_cnpj,
+                email: order.email,
+                address: {
+                    cep: order.cep,
+                    street: order.street,
+                    number: order.number,
+                    district: order.district,
+                    city: order.city,
+                    uf: order.uf
+                }
+            },
+            items: typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []),
+            total: order.total,
+            timestamp: new Date().toISOString()
+        };
+
+        // Update order status
+        try {
+            await q('UPDATE orders SET invoice_status = ? WHERE id = ?', ['issued', orderId]);
+        } catch (dbErr) {
+            const idx = memOrders.findIndex(o => o.id == orderId);
+            if (idx !== -1) memOrders[idx].invoice_status = 'issued';
+        }
+
+        res.json({ success: true, invoice: invoiceData });
+    } catch (err) {
+        console.error('POST /api/invoices error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -221,6 +367,12 @@ app.delete('/api/orders/:id', async (req, res) => {
         console.error('DELETE /api/orders error:', err.message);
         res.status(500).json({ error: err.message });
     }
+});
+
+// Express error handler
+app.use((err, req, res, next) => {
+    console.error('🔥 Erro no Express:', err);
+    res.status(500).json({ error: 'Erro interno no servidor', details: err.message });
 });
 
 // Start server (no need to pre-connect; getDB() handles lazy connect)

@@ -198,36 +198,54 @@ class Dashboard {
         if (activeCount) activeCount.textContent = this.orders.length;
 
         if (this.orders.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">Nenhum pedido ou carrinho ativo no momento.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">Nenhum pedido ou carrinho ativo no momento.</td></tr>';
             return;
         }
 
-        tableBody.innerHTML = this.orders.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate)).map(o => `
-            <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
-                <td style="padding: 1rem 1.5rem; font-weight: 600;">${o.customer}</td>
-                <td style="padding: 1rem 1.5rem;">${o.whatsapp}</td>
-                <td style="padding: 1rem 1.5rem; font-size: 0.8rem; color: #94a3b8;">${new Date(o.lastUpdate).toLocaleString('pt-BR')}</td>
-                <td style="padding: 1rem 1.5rem;">
-                    <div style="font-size: 0.8rem; max-height: 60px; overflow-y: auto;">
-                        ${o.items.map(i => `${i.name} (x${i.quantity})`).join('<br>')}
-                    </div>
-                </td>
-                <td style="padding: 1rem 1.5rem; font-weight: 700; color: #10b981;">${o.total}</td>
-                <td style="padding: 1rem 1.5rem;">
-                    <span class="badge" style="background: ${o.status === 'finalized' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(37, 99, 235, 0.2)'}; color: ${o.status === 'finalized' ? '#10b981' : '#60a5fa'};">
-                        ${o.status === 'finalized' ? 'Finalizado' : 'Navegando'}
-                    </span>
-                </td>
-                <td style="padding: 1rem 1.5rem;">
-                    <button class="btn btn-primary btn-sm" onclick="dashboard.contactCustomer('${o.whatsapp}', '${o.customer}')">
-                        <i data-lucide="message-circle" style="width: 14px;"></i> Contato
-                    </button>
-                    <button class="action-btn delete" onclick="dashboard.deleteOrder('${o.id}')" style="margin-left: 0.5rem;">
-                        <i data-lucide="trash-2" style="width: 14px;"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tableBody.innerHTML = this.orders.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate)).map(o => {
+            const itemsList = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+            const paymentStatus = o.payment_status || (o.status === 'finalized' ? 'pending' : 'browsing');
+            const fiscalStatus = o.invoice_status || 'pending';
+
+            return `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
+                    <td style="padding: 1rem 1.5rem; font-weight: 600;">${o.customer}</td>
+                    <td style="padding: 1rem 1.5rem;">${o.whatsapp}</td>
+                    <td style="padding: 1rem 1.5rem; font-size: 0.8rem; color: #94a3b8;">${new Date(o.lastUpdate).toLocaleString('pt-BR')}</td>
+                    <td style="padding: 1rem 1.5rem;">
+                        <div style="font-size: 0.8rem; max-height: 60px; overflow-y: auto;">
+                            ${itemsList.map(i => `${i.name} (x${i.quantity})`).join('<br>')}
+                        </div>
+                    </td>
+                    <td style="padding: 1rem 1.5rem; font-weight: 700; color: #10b981;">${typeof o.total === 'number' ? formatCurrency(o.total) : o.total}</td>
+                    <td style="padding: 1rem 1.5rem;">
+                        <span class="badge" style="background: ${paymentStatus === 'paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(37, 99, 235, 0.2)'}; color: ${paymentStatus === 'paid' ? '#10b981' : '#60a5fa'};">
+                            ${paymentStatus === 'paid' ? 'Pago' : (paymentStatus === 'browsing' ? 'Navegando' : 'Pendente')}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem 1.5rem;">
+                        <span class="badge" style="background: ${fiscalStatus === 'issued' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(249, 115, 22, 0.2)'}; color: ${fiscalStatus === 'issued' ? '#10b981' : '#f97316'};">
+                            ${fiscalStatus === 'issued' ? 'Emitida ✅' : 'Pendente'}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem 1.5rem;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button class="btn btn-primary btn-sm" onclick="dashboard.contactCustomer('${o.whatsapp}', '${o.customer}')">
+                                <i data-lucide="message-circle" style="width: 14px;"></i>
+                            </button>
+                            ${paymentStatus === 'paid' && fiscalStatus === 'pending' ? `
+                                <button class="btn btn-secondary btn-sm" onclick="dashboard.issueInvoice('${o.id}')" style="background: #f97316; color: white;">
+                                    <i data-lucide="file-text" style="width: 14px;"></i> NF
+                                </button>
+                            ` : ''}
+                            <button class="action-btn delete" onclick="dashboard.deleteOrder('${o.id}')">
+                                <i data-lucide="trash-2" style="width: 14px;"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
         lucide.createIcons();
     }
 
@@ -247,6 +265,27 @@ class Dashboard {
             } catch (e) {
                 console.error('Erro ao deletar pedido:', e);
             }
+        }
+    }
+
+    async issueInvoice(orderId) {
+        try {
+            const response = await fetch(`${this.API_URL}/api/invoices`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`Nota Fiscal emitida com sucesso para o pedido ${orderId}!\n\nDados fiscais (Simulação):\nEmitente: ${data.invoice.emitter.razao_social}\nDestinatário: ${data.invoice.customer.name}\nCPF: ${data.invoice.customer.cpf_cnpj}\nTotal: R$ ${data.invoice.total}`);
+                await this.loadData();
+                this.renderOrders();
+            } else {
+                alert('Erro ao emitir nota fiscal: ' + (data.error || 'Erro desconhecido'));
+            }
+        } catch (e) {
+            console.error('Erro ao emitir nota fiscal:', e);
+            alert('Erro de conexão com o servidor.');
         }
     }
 
