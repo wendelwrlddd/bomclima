@@ -847,10 +847,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-    });
-});
-        if (window.scrollY > 50) { header.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'; } 
-        else { header.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; }
+        if (window.scrollY > 50) { 
+            header.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'; 
+        } else { 
+            header.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; 
+        }
     });
 
     function initSlider(sliderSelector) {
