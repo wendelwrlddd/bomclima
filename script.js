@@ -136,15 +136,16 @@ window.closeCheckout = function() {
 };
 
 window.closeProductDetails = function() {
-    const sectionsToReveal = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container'];
+    const sectionsToReveal = ['.hero', '.quick-actions', '.main-content-wrapper', '#categories', '.brands-banner', '.promo-images-container', '#products'];
     sectionsToReveal.forEach(sel => {
         const el = document.querySelector(sel);
         if (el) el.style.display = 'block';
     });
     const detailSection = document.getElementById('product-details');
     if (detailSection) detailSection.style.display = 'none';
-    const productsSection = document.getElementById('products');
-    if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth' });
+    
+    // Refresh AOS for revealed elements
+    if (typeof AOS !== 'undefined') AOS.refresh();
 };
 
 window.placeOrder = function() {
@@ -260,9 +261,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Close mobile menu when clicking a link
+    // AND Ensure sections are visible if clicking an anchor link inside index.html
     document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            
             if (nav) nav.classList.remove('active');
+
+            // If it's an anchor link on the current page
+            if (href && href.startsWith('#')) {
+                const detailSection = document.getElementById('product-details');
+                if (detailSection && detailSection.style.display === 'block') {
+                    closeProductDetails();
+                }
+                
+                const targetId = href.substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    e.preventDefault();
+                    const headerHeight = document.querySelector('.header')?.offsetHeight || 80;
+                    const top = targetEl.offsetTop - headerHeight;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                }
+            }
         });
     });
 
@@ -798,6 +819,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('scroll', () => {
         const header = document.querySelector('.header');
+        if (header) {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        }
+
+        // --- Active Link Highlight on Scroll ---
+        const scrollPosition = window.scrollY + 150;
+        const sections = ['home', 'products', 'categories'];
+        
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.style.display !== 'none') {
+                const top = el.offsetTop;
+                const height = el.offsetHeight;
+                
+                if (scrollPosition >= top && scrollPosition < top + height) {
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            }
+        });
+    });
+});
         if (window.scrollY > 50) { header.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)'; } 
         else { header.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; }
     });
