@@ -130,7 +130,10 @@
             .maintenance-item, .maintenance-item.alternate { grid-template-columns: 1fr; }
             .maintenance-item.alternate .maintenance-img-box { order: 0; }
             .maintenance-item.alternate .maintenance-text-box { order: 1; }
-            .contact-card.scheduler { grid-column: auto; }
+            .contact-card.scheduler { 
+                grid-column: 1 / -1 !important; 
+                padding: 2rem 1rem !important;
+            }
             .container { padding: 0 1rem !important; }
         }
     </style>
