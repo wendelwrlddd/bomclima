@@ -462,23 +462,36 @@ body {
         font-size: 0.7rem;
     }
 
+    .container {
+        padding: 0 1rem !important;
+    }
+
     /* Contact Cards 2 Columns */
     .contact-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 
     .contact-card {
-        padding: 1rem 0.5rem !important;
+        padding: 1.2rem 0.5rem !important;
         border-radius: 12px !important;
+        width: 100% !important;
     }
 
     .contact-card h3 {
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
     }
 
     .contact-card p {
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important;
+        line-height: 1.2;
     }
 
     .card-icon-wrapper {

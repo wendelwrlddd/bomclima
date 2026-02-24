@@ -105,10 +105,33 @@
         .maintenance-text-box h3 { font-size: 1.6rem; font-weight: 800; color: #1E3A8A; margin-bottom: 1rem; }
         .maintenance-text-box p { color: #4B5563; line-height: 1.8; font-size: 1rem; }
         @media (max-width: 768px) {
+            .contact-full-section { padding: 2rem 0 4rem; }
+            .contact-grid { 
+                grid-template-columns: repeat(2, 1fr) !important; 
+                gap: 10px !important; 
+                margin-top: 2rem;
+            }
+            .contact-card { 
+                padding: 1.2rem 0.5rem !important; 
+                border-radius: 12px;
+                min-width: 0; /* Prevent overflow */
+            }
+            .contact-card h3 { 
+                font-size: 0.85rem; 
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                width: 100%;
+            }
+            .contact-card p { font-size: 0.7rem; }
+            .card-icon-wrapper { width: 44px; height: 44px; }
+            .card-icon-wrapper i { width: 20px; height: 20px; }
+            .card-action { padding: 0.4rem 0.8rem; font-size: 0.7rem; margin-top: 0.5rem; }
             .maintenance-item, .maintenance-item.alternate { grid-template-columns: 1fr; }
             .maintenance-item.alternate .maintenance-img-box { order: 0; }
             .maintenance-item.alternate .maintenance-text-box { order: 1; }
             .contact-card.scheduler { grid-column: auto; }
+            .container { padding: 0 1rem !important; }
         }
     </style>
 </head>
