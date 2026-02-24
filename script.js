@@ -144,6 +144,9 @@ window.closeProductDetails = function() {
     const detailSection = document.getElementById('product-details');
     if (detailSection) detailSection.style.display = 'none';
     
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     // Refresh AOS for revealed elements
     if (typeof AOS !== 'undefined') AOS.refresh();
 };
@@ -537,6 +540,13 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase().trim();
             const section = document.getElementById('products');
+            
+            // Close product details if open
+            const detailSection = document.getElementById('product-details');
+            if (detailSection && detailSection.style.display === 'block') {
+                closeProductDetails();
+            }
+
             if (query.length > 0) {
                 const rect = section.getBoundingClientRect();
                 if (rect.top > window.innerHeight || rect.bottom < 0) { section.scrollIntoView({ behavior: 'smooth' }); }

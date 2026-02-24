@@ -45,7 +45,7 @@
     <!-- Header -->
     <header class="header">
         <div class="container header-container">
-            <div class="logo">
+            <div class="logo" onclick="closeProductDetails()" style="cursor: pointer;">
                 <img src="./assets/logo.png" alt="Bom Clima Ar Condicionado" class="logo-img">
             </div>
             <nav class="nav">
@@ -167,9 +167,9 @@
                         <button class="btn btn-secondary btn-large" onclick="addToCartCurrentProduct()" style="background-color: #F3F4F6; color: #1F2937; border: 2px solid #E5E7EB;">
                             Adicionar ao Carrinho <i data-lucide="shopping-cart" style="width: 18px; margin-left: 8px;"></i>
                         </button>
-                        <button class="btn btn-primary btn-large" onclick="openCheckout()" style="background-color: #10B981;">
+<!-- <button class="btn btn-primary btn-large" onclick="openCheckout()" style="background-color: #10B981;">
                             Pagar <i data-lucide="credit-card" style="width: 18px; margin-left: 8px;"></i>
-                        </button>
+                        </button> -->
                         <button class="btn btn-secondary btn-large" onclick="placeOrder()">
                             Comprar Agora (WhatsApp) <i data-lucide="message-circle" style="width: 18px; margin-left: 8px;"></i>
                         </button>
