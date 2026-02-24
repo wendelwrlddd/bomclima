@@ -137,6 +137,12 @@ body {
     border: none;
     cursor: pointer;
     color: var(--dark-gray);
+    padding: 0.5rem;
+}
+
+.mobile-menu-btn i {
+    width: 28px;
+    height: 28px;
 }
 
 /* Header Search */
@@ -405,6 +411,40 @@ body {
 }
 
 @media (max-width: 768px) {
+    .header-search {
+        display: none;
+    }
+
+    .nav {
+        display: none; /* Hide main nav links by default on mobile */
+    }
+
+    .nav.active {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        padding: 1.5rem;
+        box-shadow: var(--shadow-strong);
+        gap: 1.5rem;
+    }
+
+    .nav-main-mobile {
+        display: flex !important;
+        gap: 1rem;
+    }
+
+    .nav-main-mobile .nav-link {
+        font-size: 0.9rem;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
     .quick-actions-container {
         gap: 1rem;
     }
@@ -420,6 +460,40 @@ body {
     }
     .action-text {
         font-size: 0.7rem;
+    }
+
+    /* Contact Cards 2 Columns */
+    .contact-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .contact-card {
+        padding: 1rem 0.5rem !important;
+        border-radius: 12px !important;
+    }
+
+    .contact-card h3 {
+        font-size: 0.9rem !important;
+    }
+
+    .contact-card p {
+        font-size: 0.75rem !important;
+    }
+
+    .card-icon-wrapper {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .card-icon-wrapper i {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .card-action {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.7rem !important;
     }
 }
 
