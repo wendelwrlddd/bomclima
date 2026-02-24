@@ -9,8 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* ===== CONTACT PAGE OVERRIDES ===== */
@@ -159,10 +158,10 @@
                 <a href="contato.html" class="nav-link active">Contato</a>
             </div>
             <nav class="nav">
-                <a href="index.html#home" class="nav-link animate__animated animate__backInDown">Início</a>
-                <a href="index.html#products" class="nav-link animate__animated animate__backInDown">Produtos</a>
-                <a href="index.html#categories" class="nav-link animate__animated animate__backInDown">Categorias</a>
-                <a href="contato.html" class="nav-link animate__animated animate__backInDown active">Contato</a>
+                <a href="index.html#home" class="nav-link">Início</a>
+                <a href="index.html#products" class="nav-link">Produtos</a>
+                <a href="index.html#categories" class="nav-link">Categorias</a>
+                <a href="contato.html" class="nav-link active">Contato</a>
             </nav>
             <div class="header-actions">
                 <button class="cart-btn" onclick="window.location.href='index.html'">
@@ -180,7 +179,7 @@
     <main class="contact-full-section">
         <div class="container">
 
-            <div class="section-header" data-aos="fade-up">
+            <div class="section-header">
                 <h2 class="section-title">Canais de Atendimento</h2>
                 <div class="section-line"></div>
                 <p class="section-description">Escolha o melhor canal para falar com nossa equipe especializada.</p>
@@ -188,18 +187,18 @@
 
             <div class="contact-grid">
                 <!-- LIGAR -->
-                <div class="contact-card call" data-aos="zoom-in" data-aos-delay="0"
-                     onclick="window.location.href='tel:+557333018435'">
+                <div class="contact-card call" 
+                     onclick="window.location.href='tel:+5573991160807'">
                     <div class="card-icon-wrapper">
                         <i data-lucide="phone-call"></i>
                     </div>
                     <h3>Ligar Agora</h3>
-                    <p>(73) 3301-8435</p>
+                    <p>(73) 99116-0807</p>
                     <span class="card-action">Chamar via Telefone</span>
                 </div>
 
                 <!-- WHATSAPP -->
-                <div class="contact-card whatsapp" data-aos="zoom-in" data-aos-delay="100"
+                <div class="contact-card whatsapp" 
                      onclick="window.open('https://wa.me/557381203737','_blank')">
                     <div class="card-icon-wrapper">
                         <i data-lucide="message-circle"></i>
@@ -210,7 +209,7 @@
                 </div>
 
                 <!-- INSTAGRAM -->
-                <div class="contact-card instagram" data-aos="zoom-in" data-aos-delay="200"
+                <div class="contact-card instagram" 
                      onclick="window.open('https://www.instagram.com/bomclima.tec','_blank')">
                     <div class="card-icon-wrapper">
                         <i data-lucide="instagram"></i>
@@ -221,18 +220,18 @@
                 </div>
 
                 <!-- WAZE -->
-                <div class="contact-card waze" data-aos="zoom-in" data-aos-delay="300"
+                <div class="contact-card waze" 
                      onclick="window.open('https://waze.com/ul?q=R.+S%C3%A3o+Pedro%2C+44+-+Alto+Maron%2C+Itabuna+-+BA%2C+45603-420&navigate=yes','_blank')">
-                    <div class="card-icon-wrapper">
-                        <i data-lucide="navigation"></i>
+                    <div class="card-icon-wrapper" style="background: transparent; padding: 0;">
+                        <img src="./assets/waze-icon.png" alt="Waze" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
                     </div>
-                    <h3>Como Chegar</h3>
+                    <h3>Waze</h3>
                     <p>R. São Pedro, 44 - Alto Maron<br>Itabuna - BA, 45603-420</p>
                     <span class="card-action">Abrir no Waze</span>
                 </div>
 
                 <!-- CALENDÁRIO -->
-                <div class="contact-card scheduler" data-aos="zoom-in" data-aos-delay="300">
+                <div class="contact-card scheduler">
                     <div class="card-icon-wrapper">
                         <i data-lucide="calendar-check"></i>
                     </div>
@@ -263,13 +262,13 @@
 
             <!-- Seção de Infraestrutura -->
             <div class="maintenance-services-section">
-                <div class="section-header" data-aos="fade-up">
+                <div class="section-header">
                     <h2 class="section-title">Nossa Estrutura &amp; Serviços</h2>
                     <div class="section-line"></div>
                 </div>
 
                 <div class="maintenance-grid">
-                    <div class="maintenance-item" data-aos="fade-right">
+                    <div class="maintenance-item">
                         <div class="maintenance-img-box">
                             <img src="./images/contato/foto-atendimento-campo.jpg" alt="Linha Amarela e Pesada">
                         </div>
@@ -279,7 +278,7 @@
                         </div>
                     </div>
 
-                    <div class="maintenance-item alternate" data-aos="fade-left">
+                    <div class="maintenance-item alternate">
                         <div class="maintenance-text-box">
                             <h3>Frota de Suporte Móvel</h3>
                             <p>Nossa frota de unidades móveis está sempre equipada com ferramentas de última geração para realizar reparos rápidos e eficientes onde você precisar, levando a excelência da Bom Clima até o seu local.</p>
@@ -289,7 +288,7 @@
                         </div>
                     </div>
 
-                    <div class="maintenance-item" data-aos="fade-right">
+                    <div class="maintenance-item">
                         <div class="maintenance-img-box">
                             <img src="./images/contato/foto-sala-vip.jpg" alt="Sala de Espera VIP">
                         </div>
@@ -299,7 +298,7 @@
                         </div>
                     </div>
 
-                    <div class="maintenance-item alternate" data-aos="fade-left">
+                    <div class="maintenance-item alternate">
                         <div class="maintenance-text-box">
                             <h3>Estoque &amp; Almoxarifado</h3>
                             <p>Contamos com um dos maiores estoques de peças para ar condicionado automotivo da região. Compressores, condensadores, filtros e muito mais — tudo à pronta entrega para garantir a agilidade no seu atendimento.</p>
@@ -309,7 +308,7 @@
                         </div>
                     </div>
 
-                    <div class="maintenance-item" data-aos="fade-right">
+                    <div class="maintenance-item">
                         <div class="maintenance-img-box">
                             <img src="./images/contato/foto-escritorio.jpg" alt="Escritório da Bom Clima">
                         </div>
@@ -325,7 +324,7 @@
     </main>
 
     <!-- Footer IDÊNTICO ao index.html -->
-    <footer class="footer" data-aos="fade-up">
+    <footer class="footer">
         <div class="footer-top-line"></div>
         <div class="container footer-content">
             <div class="footer-col">
@@ -372,12 +371,8 @@
         <i data-lucide="message-circle" class="whatsapp-icon"></i>
     </a>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // AOS
-            if (typeof AOS !== 'undefined') AOS.init({ duration: 800, once: true });
-
             // Lucide
             if (window.lucide) window.lucide.createIcons();
 
