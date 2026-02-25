@@ -41,6 +41,10 @@ app.use(express.json({ limit: '50mb' }));
 // Rota de teste para verificar se o servidor está vivo
 app.get('/health', (req, res) => res.send('OK'));
 
+app.get('/api/test-cors', (req, res) => {
+    res.json({ message: 'CORS Manual Ativo', debug: 'suprema-v1' });
+});
+
 // Mercado Pago Configuration (Test credentials)
 const mpClient = new MercadoPagoConfig({ 
     accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660' 
