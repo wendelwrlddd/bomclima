@@ -531,18 +531,32 @@ class Dashboard {
             }
         };
 
-        if (detailsSaveImg) detailsSaveImg.onclick = () => {
+        if (detailsSaveImg) detailsSaveImg.onclick = async () => {
             const img = document.getElementById('viewMainImage');
             const name = document.getElementById('viewName').value || 'produto';
-            if (img && img.src) {
-                const link = document.createElement('a');
-                link.href = img.src;
-                link.download = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else {
-                alert('Nenhuma foto disponível para download.');
+            if (img && img.src && img.src.startsWith('data:image')) {
+                try {
+                    // Converter Base64 para Blob para download nativo "real"
+                    const base64Data = img.src.split(',')[1];
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'image/png' });
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error('Erro ao preparar download:', err);
+                }
             }
         };
 
@@ -633,11 +647,17 @@ class Dashboard {
                 this.filteredProducts = [...this.products];
                 this.save();
                 this.render();
-                if (btn) { btn.disabled = false; btn.textContent = 'Salvar Produto'; }
-                alert('Salvo com sucesso no Banco de Dados!');
+                if (btn) { 
+                    btn.disabled = false; 
+                    btn.innerHTML = '<i data-lucide="check"></i> Gravado!'; 
+                    setTimeout(() => { if (btn) btn.textContent = 'Salvar Produto'; lucide.createIcons(); }, 3000);
+                }
             } else {
-                alert('Erro ao salvar no servidor Railway (Erro HTTP ' + response.status + ')');
-                if (btn) { btn.disabled = false; btn.textContent = 'Salvar Produto'; }
+                if (btn) { 
+                    btn.disabled = false; 
+                    btn.textContent = 'Erro ao Salvar'; 
+                    setTimeout(() => { if (btn) btn.textContent = 'Salvar Produto'; }, 3000);
+                }
             }
         } catch (err) {
             console.error('Erro de conexão com API:', err);
@@ -744,12 +764,23 @@ class Dashboard {
                 this.filteredProducts = [...this.products];
                 this.save();
                 this.render();
-                document.getElementById('detailsModalOverlay').style.display = 'none';
-                alert('Informações e Foto atualizadas com sucesso!');
+                
+                if (btn) {
+                    btn.textContent = 'Alterações Salvas!';
+                    setTimeout(() => { 
+                        document.getElementById('detailsModalOverlay').style.display = 'none';
+                        if (btn) btn.textContent = 'Confirmar Alterações'; 
+                    }, 1000);
+                } else {
+                    document.getElementById('detailsModalOverlay').style.display = 'none';
+                }
             } else {
-                alert('Erro ao gravar dados no servidor (HTTP ' + response.status + ')');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Erro no Servidor';
+                    setTimeout(() => { if (btn) btn.textContent = 'Confirmar Alterações'; }, 3000);
+                }
             }
-            if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Alterações'; }
         } catch (err) {
             console.error('Erro ao salvar detalhes:', err);
             alert('Erro de conexão.');
