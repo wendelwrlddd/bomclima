@@ -19,6 +19,8 @@ app.use(cors({
         'https://bomclima-itabuna.vercel.app',
         'https://bomclima.top',
         'https://www.bomclima.top',
+        'https://bomclima.top/',
+        'https://www.bomclima.top/',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:3000',
