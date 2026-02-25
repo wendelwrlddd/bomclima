@@ -8,20 +8,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Configuração simplificada e robusta de CORS
-const allowedOrigins = [
-    'https://bomclima-itabuna.vercel.app',
-    'https://bomclima.top',
-    'https://www.bomclima.top',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
-    'http://127.0.0.1:5173'
-];
 
 app.use(cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    origin: [
+        'https://bomclima.top',
+        'https://www.bomclima.top',
+        'https://bomclima-itabuna.vercel.app',
+        'http://localhost:5173',
+        'http://localhost:3000'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
 
