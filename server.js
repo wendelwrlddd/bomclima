@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.0.6'));
+app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.1.0'));
 app.get('/health', (req, res) => res.send('OK'));
 
 app.get('/api/test-cors', (req, res) => {
