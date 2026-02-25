@@ -7,28 +7,24 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração simplificada e robusta de CORS
-
+// ✅ SOLUÇÃO DEFINITIVA DE CORS (Topo Absoluto)
 app.use(cors({
-    origin: function (origin, callback) {
-        // Permitir sem origin (mobile/curl) ou se for um dos nossos domínios
-        if (!origin || 
-            origin.includes('bomclima.top') || 
-            origin.includes('bomclima-itabuna.vercel.app') || 
-            origin.includes('localhost') || 
-            origin.includes('127.0.0.1')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Bloqueado pelo CORS do Cabrunco'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
+  origin: [
+    "https://bomclima.top",
+    "https://www.bomclima.top",
+    "https://bomclima-itabuna.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: true
 }));
 
-// Habilitar pre-flight para todas as rotas
-app.options('*', cors());
+app.options("*", cors()); // <<< ESSENCIAL PARA PRE-FLIGHT (OPTIONS)
+
+app.use(express.json({ limit: '50mb' }));
 
 // Rota de teste para verificar se o servidor está vivo
 app.get('/health', (req, res) => res.send('OK'));
@@ -38,8 +34,6 @@ const mpClient = new MercadoPagoConfig({
     accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660' 
 });
 const preference = new Preference(mpClient);
-
-app.use(express.json({ limit: '50mb' }));
 
 // Global process error logging
 process.on('unhandledRejection', (reason, promise) => {
