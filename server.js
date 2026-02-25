@@ -7,8 +7,8 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ SOLUÇÃO DEFINITIVA DE CORS (Topo Absoluto)
-app.use(cors({
+// ✅ VERSÃO IDEAL DE CORS (Sugerida pelo manual de solução)
+const corsOptions = {
   origin: [
     "https://bomclima.top",
     "https://www.bomclima.top",
@@ -20,9 +20,10 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   credentials: true
-}));
+};
 
-app.options("*", cors()); // <<< ESSENCIAL PARA PRE-FLIGHT (OPTIONS)
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Sincroniza o pre-flight com as mesmas regras da whitelist
 
 app.use(express.json({ limit: '50mb' }));
 
