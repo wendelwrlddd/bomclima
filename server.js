@@ -7,32 +7,29 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração robusta de CORS
-app.use(cors({
-    origin: function (origin, callback) {
-        // Permitir requisições sem origin (como mobile apps ou curl)
-        if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            'https://bomclima-itabuna.vercel.app',
-            'https://bomclima.top',
-            'https://www.bomclima.top',
-            'http://localhost:5173',
-            'http://localhost:5174',
-            'http://localhost:3000'
-        ];
+// Configuração simplificada e robusta de CORS
+const allowedOrigins = [
+    'https://bomclima-itabuna.vercel.app',
+    'https://bomclima.top',
+    'https://www.bomclima.top',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173'
+];
 
-        // Se o origin estiver na lista ou for um subdomínio de bomclima.top
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('bomclima.top')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Não permitido pelo CORS'));
-        }
-    },
+app.use(cors({
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true
 }));
+
+// Habilitar pre-flight para todas as rotas
+app.options('*', cors());
+
+// Rota de teste para verificar se o servidor está vivo
+app.get('/health', (req, res) => res.send('OK'));
 
 // Mercado Pago Configuration (Test credentials)
 const mpClient = new MercadoPagoConfig({ 
