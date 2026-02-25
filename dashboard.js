@@ -594,6 +594,12 @@ class Dashboard {
         };
 
         try {
+            const btn = e ? e.submitter : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span> Salvando...';
+            }
+
             const response = await fetch(`${this.API_URL}/api/products`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -602,21 +608,26 @@ class Dashboard {
 
             if (response.ok) {
                 const result = await response.json();
-                if (id) {
-                    const index = this.products.findIndex(p => p.id == id);
-                    this.products[index] = { ...this.products[index], ...productData };
-                    this.logEvent('edit', this.products[index], `Produto atualizado no servidor`);
+                const finalId = (id || result.id).toString();
+                
+                const index = this.products.findIndex(p => p.id.toString() === finalId);
+                if (index !== -1) {
+                    this.products[index] = { ...this.products[index], ...productData, id: finalId };
+                    this.logEvent('edit', this.products[index], `Alterações gravadas no Banco`);
                 } else {
-                    const newProd = { ...productData, id: result.id, date: new Date().toISOString() };
+                    const newProd = { ...productData, id: finalId, date: new Date().toISOString() };
                     this.products.unshift(newProd);
-                    this.logEvent('create', newProd, 'Produto criado no servidor');
+                    this.logEvent('create', newProd, 'Novo produto gravado no Banco');
                 }
                 
                 this.filteredProducts = [...this.products];
                 this.save();
                 this.render();
+                if (btn) { btn.disabled = false; btn.textContent = 'Salvar Produto'; }
+                alert('Salvo com sucesso no Banco de Dados!');
             } else {
-                alert('Erro ao salvar no servidor Railway');
+                alert('Erro ao salvar no servidor Railway (Erro HTTP ' + response.status + ')');
+                if (btn) { btn.disabled = false; btn.textContent = 'Salvar Produto'; }
             }
         } catch (err) {
             console.error('Erro de conexão com API:', err);
@@ -698,6 +709,12 @@ class Dashboard {
         };
 
         try {
+            const btn = document.getElementById('saveDetailsChanges') || document.getElementById('detailsSaveImg');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Gravando no Banco...';
+            }
+
             const response = await fetch(`${this.API_URL}/api/products`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -705,17 +722,24 @@ class Dashboard {
             });
 
             if (response.ok) {
-                const index = this.products.findIndex(prod => prod.id == id);
-                this.products[index] = productData;
-                this.logEvent('edit', productData, `Ficha técnica atualizada`);
+                const result = await response.json();
+                const finalId = id.toString();
+                const index = this.products.findIndex(prod => prod.id.toString() === finalId);
                 
+                if (index !== -1) {
+                    this.products[index] = { ...productData, id: finalId };
+                }
+                
+                this.logEvent('edit', productData, `Ficha técnica salva definitivamente`);
                 this.filteredProducts = [...this.products];
                 this.save();
                 this.render();
                 document.getElementById('detailsModalOverlay').style.display = 'none';
+                alert('Informações e Foto atualizadas com sucesso!');
             } else {
-                alert('Erro ao salvar no servidor Railway');
+                alert('Erro ao gravar dados no servidor (HTTP ' + response.status + ')');
             }
+            if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Alterações'; }
         } catch (err) {
             console.error('Erro ao salvar detalhes:', err);
             alert('Erro de conexão.');

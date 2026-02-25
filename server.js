@@ -1,4 +1,4 @@
-// Versão: 1.0.6 - SUPREME PERSISTENCE - [7:20 PM]
+// Versão: 1.1.0 - PROD-READY - [7:35 PM]
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
@@ -38,6 +38,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.0.6'));
 app.get('/health', (req, res) => res.send('OK'));
@@ -117,15 +118,15 @@ async function initDB(conn) {
         // 1. Create tables first
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS products (
-                id BIGINT PRIMARY KEY,
+                id VARCHAR(255) PRIMARY KEY, -- Mudado para VARCHAR para consistência
                 name VARCHAR(255) NOT NULL,
-                categories TEXT,
+                categories LONGTEXT, -- Mudado para LONGTEXT
                 price VARCHAR(100),
                 promoPrice VARCHAR(100),
                 stock INT DEFAULT 0,
                 stockStatus VARCHAR(100),
                 imageName LONGTEXT,
-                description TEXT,
+                description LONGTEXT, -- Mudado para LONGTEXT
                 sku VARCHAR(100),
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -156,19 +157,32 @@ async function initDB(conn) {
 
         await conn.execute(`
             CREATE TABLE IF NOT EXISTS events (
-                id BIGINT PRIMARY KEY,
+                id VARCHAR(255) PRIMARY KEY,
                 type VARCHAR(50),
                 productName VARCHAR(255),
-                productId BIGINT,
+                productId VARCHAR(255),
                 details TEXT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // 2. Upgrade existing columns if needed
+        // 2. Upgrade existing columns if needed (Garante que fotos grandes funcionem)
         const [prodCols] = await conn.execute("SHOW COLUMNS FROM products");
+        
+        // SKU Check
         if (!prodCols.find(c => c.Field === 'sku')) {
             await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
+        }
+
+        // Force LONGTEXT for images and descriptions (MUITO IMPORTANTE)
+        await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
+        await conn.execute(`ALTER TABLE products MODIFY COLUMN description LONGTEXT`);
+        await conn.execute(`ALTER TABLE products MODIFY COLUMN categories LONGTEXT`);
+        
+        // Garante que o ID seja VARCHAR para suportar UUIDs ou timestamps do front
+        const idCol = prodCols.find(c => c.Field === 'id');
+        if (idCol && idCol.Type.toLowerCase().includes('int')) {
+             await conn.execute(`ALTER TABLE products MODIFY COLUMN id VARCHAR(255)`);
         }
         
         const [orderCols] = await conn.execute("SHOW COLUMNS FROM orders");
@@ -183,8 +197,19 @@ async function initDB(conn) {
             const colName = colDef.split(' ')[0];
             if (!orderCols.find(c => c.Field === colName)) {
                 await conn.execute(`ALTER TABLE orders ADD COLUMN ${colDef}`);
-                console.log(`✅ Coluna adicionada: ${colName}`);
+                console.log(`✅ Coluna adicionada em orders: ${colName}`);
             }
+        }
+
+        // Forçar VARCHAR no eventos também se necessário
+        const [eventCols] = await conn.execute("SHOW COLUMNS FROM events");
+        const evIdCol = eventCols.find(c => c.Field === 'id');
+        if (evIdCol && evIdCol.Type.toLowerCase().includes('int')) {
+             await conn.execute(`ALTER TABLE events MODIFY COLUMN id VARCHAR(255)`);
+        }
+        const evProdIdCol = eventCols.find(c => c.Field === 'productId');
+        if (evProdIdCol && evProdIdCol.Type.toLowerCase().includes('int')) {
+             await conn.execute(`ALTER TABLE events MODIFY COLUMN productId VARCHAR(255)`);
         }
 
         console.log('✅ Tabelas verificadas/atualizadas com sucesso');
@@ -230,7 +255,12 @@ async function q(sql, params = []) {
     if (!conn) {
         throw new Error('Banco de dados indisponível. Verifique a conexão.');
     }
-    return conn.execute(sql, params);
+    try {
+        return await conn.execute(sql, params);
+    } catch (err) {
+        console.error(`❌ Erro SQL [${sql.substring(0, 50)}...]:`, err.message);
+        throw err;
+    }
 }
 
 // Routes — Products
@@ -248,27 +278,32 @@ app.post('/api/products', async (req, res) => {
     const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku } = req.body;
     try {
         if (id) {
+            // Se já tem ID, tenta atualizar
             await q(
                 'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=? WHERE id=?',
-                [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null, id]
+                [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku, id.toString()]
             );
-            res.json({ success: true, message: 'Produto atualizado' });
+            res.json({ success: true, message: 'Produto atualizado no Banco', id: id.toString() });
         } else {
-            const newId = Date.now();
+            // Se não tem ID, cria um novo
+            const newId = Date.now().toString();
             await q(
                 'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null]
             );
-            res.json({ success: true, message: 'Produto criado', id: newId });
+            res.json({ success: true, message: 'Produto criado no Banco', id: newId });
         }
     } catch (err) {
-        console.warn('⚠️ Salvando em memória: POST /api/products');
-        const productToSave = { ...req.body };
-        if (!productToSave.id) productToSave.id = Date.now();
+        console.error('❌ Erro real ao salvar no Banco:', err);
+        console.warn('⚠️ Fallback acionado: POST /api/products');
         
-        const idx = memProducts.findIndex(p => p.id == productToSave.id);
-        if (idx !== -1) {
-            memProducts[idx] = { ...memProducts[idx], ...productToSave };
+        const productToSave = { ...req.body };
+        if (!productToSave.id) productToSave.id = Date.now().toString();
+        else productToSave.id = productToSave.id.toString();
+
+        const index = memProducts.findIndex(p => p.id.toString() === productToSave.id);
+        if (index !== -1) {
+            memProducts[index] = { ...memProducts[index], ...productToSave };
         } else {
             memProducts.push(productToSave);
         }
@@ -306,7 +341,7 @@ app.get('/api/history', async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.warn('⚠️ Usando fallback de memória para GET /api/history');
-        res.json(memEvents);
+        res.json(memHistory);
     }
 });
 
