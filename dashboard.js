@@ -505,6 +505,7 @@ class Dashboard {
         const closeDetails = document.getElementById('closeDetailsModal');
         const cancelDetails = document.getElementById('cancelDetails');
         const detailsChangeImg = document.getElementById('detailsChangeImg');
+        const detailsSaveImg = document.getElementById('detailsSaveImg');
         const detailsFileInput = document.getElementById('detailsFileInput');
         const saveDetailsChanges = document.getElementById('saveDetailsChanges');
 
@@ -516,9 +517,15 @@ class Dashboard {
         if (detailsFileInput) detailsFileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
+                console.log('Arquivo selecionado:', file.name, file.type);
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    document.getElementById('viewMainImage').src = event.target.result;
+                    const img = document.getElementById('viewMainImage');
+                    if (img) {
+                        img.src = event.target.result;
+                        img.style.display = 'block';
+                        console.log('Preview da imagem atualizado');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
