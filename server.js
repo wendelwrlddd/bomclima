@@ -1,11 +1,38 @@
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const { MercadoPagoConfig, Preference } = require('mercadopago'); // New MP SDK v2
-require('dotenv').config();
+const { MercadoPagoConfig, Preference } = require('mercadopago');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Configuração robusta de CORS
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitir requisições sem origin (como mobile apps ou curl)
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+            'https://bomclima-itabuna.vercel.app',
+            'https://bomclima.top',
+            'https://www.bomclima.top',
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:3000'
+        ];
+
+        // Se o origin estiver na lista ou for um subdomínio de bomclima.top
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('bomclima.top')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
 // Mercado Pago Configuration (Test credentials)
 const mpClient = new MercadoPagoConfig({ 
@@ -13,23 +40,6 @@ const mpClient = new MercadoPagoConfig({
 });
 const preference = new Preference(mpClient);
 
-// Middleware
-app.use(cors({
-    origin: [
-        'https://bomclima-itabuna.vercel.app',
-        'https://bomclima.top',
-        'https://www.bomclima.top',
-        'https://bomclima.top/',
-        'https://www.bomclima.top/',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:5174'
-    ],
-    methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
 app.use(express.json({ limit: '50mb' }));
 
 // Global process error logging
