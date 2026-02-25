@@ -350,7 +350,7 @@ app.post('/api/history', async (req, res) => {
     try {
         await q(
             'INSERT INTO events (id, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
-            [id || Date.now(), type, productName, productId, details, new Date().toISOString()]
+            [id || Date.now().toString(), type, productName, productId, details, new Date().toISOString().slice(0, 19).replace('T', ' ')]
         );
         res.json({ success: true });
     } catch (err) {
