@@ -1,4 +1,4 @@
-// Versão: 1.0.1 - Atualizado em 25/02/2026 às 18:50
+// Versão: 1.0.2 - FORCING REDEPLOY - [6:55 PM]
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
