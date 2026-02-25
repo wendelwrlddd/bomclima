@@ -451,8 +451,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('storage', (e) => {
         if (e.key === 'bomclima_products') {
+            console.log('🔄 Sincronizando produtos via LocalStorage...');
             loadProducts();
         }
+    });
+
+    // Recarregar quando o usuário volta para a aba do site
+    window.addEventListener('focus', () => {
+        console.log('🌐 Site focado, atualizando dados da API...');
+        loadProducts();
     });
 
     function getStars(rating) {

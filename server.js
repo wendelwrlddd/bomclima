@@ -42,6 +42,15 @@ process.on('uncaughtException', (err) => {
 
 // Fallback in-memory storage for when DB is unavailable
 let memProducts = [];
+try {
+    const fs = require('fs');
+    if (fs.existsSync('./products_data.json')) {
+        memProducts = JSON.parse(fs.readFileSync('./products_data.json', 'utf8'));
+        console.log(`✅ ${memProducts.length} produtos carregados do JSON para memória.`);
+    }
+} catch (e) {
+    console.warn('⚠️ Não foi possível carregar products_data.json na inicialização.');
+}
 let memOrders = [];
 let memEvents = [];
 
