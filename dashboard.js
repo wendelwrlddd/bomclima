@@ -96,9 +96,9 @@ class Dashboard {
         // 2. Load everything from API
         try {
             const [prodRes, histRes, ordRes] = await Promise.all([
-                fetch(`${this.API_URL}/api/products`),
-                fetch(`${this.API_URL}/api/history`),
-                fetch(`${this.API_URL}/api/orders`)
+                fetch(`${this.API_URL}/api/products?t=${Date.now()}`),
+                fetch(`${this.API_URL}/api/history?t=${Date.now()}`),
+                fetch(`${this.API_URL}/api/orders?t=${Date.now()}`)
             ]);
 
             if (prodRes.ok) apiProducts = await prodRes.json();

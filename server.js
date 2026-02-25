@@ -1,4 +1,4 @@
-// Versão: 1.0.3 - FIXING ENTRY POINT - [7:05 PM]
+// Versão: 1.0.6 - SUPREME PERSISTENCE - [7:20 PM]
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 
-// Rota de teste para verificar se o servidor está vivo
+app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.0.6'));
 app.get('/health', (req, res) => res.send('OK'));
 
 app.get('/api/test-cors', (req, res) => {
@@ -72,31 +72,32 @@ try {
     console.warn('⚠️ Não foi possível carregar products_data.json na inicialização.');
 }
 let memOrders = [];
-let memEvents = [];
+let memHistory = [];
+try {
+    const fs = require('fs');
+    if (fs.existsSync('./history_data.json')) {
+        memHistory = JSON.parse(fs.readFileSync('./history_data.json', 'utf8'));
+    }
+} catch (e) {}
 
 // Connection string prioritization: 
 // 1. MYSQL_URL environment variable (Railway/Production)
 // 2. Constructed string from internal variables (Individual vars)
 // 3. Fallback for Local/Development
 const getDBUrl = () => {
-    // Priority 1: Full URL
     if (process.env.MYSQL_URL) return process.env.MYSQL_URL;
     if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+    if (process.env.MYSQL_PRIVATE_URL) return process.env.MYSQL_PRIVATE_URL;
 
-    // Priority 2: Individual variables (Support both MYSQLHOST and MYSQL_HOST formats)
-    const host = process.env.MYSQLHOST || process.env.MYSQL_HOST;
+    const host = process.env.MYSQLHOST || process.env.MYSQL_HOST || process.env.RAILWAY_MYSQL_HOST;
     const user = process.env.MYSQLUSER || process.env.MYSQL_USER || 'root';
     const password = process.env.MYSQLPASSWORD || process.env.MYSQL_ROOT_PASSWORD || process.env.MYSQL_PASSWORD;
     const port = process.env.MYSQLPORT || process.env.MYSQL_PORT || '3306';
     const database = process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'railway';
 
-    if (host) {
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
         return `mysql://${user}:${password}@${host}:${port}/${database}`;
     }
-    
-    // Fallback for local dev if .env is missing but we want to reach Railway Public Proxy
-    if (process.env.MYSQL_PUBLIC_URL) return process.env.MYSQL_PUBLIC_URL;
-    
     return '';
 };
 
@@ -271,9 +272,22 @@ app.post('/api/products', async (req, res) => {
         } else {
             memProducts.push(productToSave);
         }
-        res.json({ success: true, message: 'Salvo em memória (DB offline)', id: productToSave.id });
+        // Persistência em arquivo para modo Offline
+        saveMemProducts();
+        res.json({ success: true, message: 'Salvo em memória e arquivo (DB offline)', id: productToSave.id });
     }
 });
+
+// Helper: Salvar produtos em arquivo quando o DB está offline
+function saveMemProducts() {
+    try {
+        const fs = require('fs');
+        fs.writeFileSync('./products_data.json', JSON.stringify(memProducts, null, 2));
+        console.log('✅ products_data.json atualizado com sucesso.');
+    } catch (e) {
+        console.error('❌ Erro ao salvar products_data.json:', e);
+    }
+}
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
@@ -300,18 +314,27 @@ app.post('/api/history', async (req, res) => {
     const { id, type, productName, productId, details } = req.body;
     try {
         await q(
-            'INSERT INTO events (id, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE type=?, productName=?, productId=?, details=?',
-            [id, type, productName, productId, details, type, productName, productId, details]
+            'INSERT INTO events (id, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+            [id || Date.now(), type, productName, productId, details, new Date().toISOString()]
         );
         res.json({ success: true });
     } catch (err) {
         console.warn('⚠️ Salvando em memória: POST /api/history');
-        const newEvent = { id, type, productName, productId, details, timestamp: new Date().toISOString() };
-        memEvents.unshift(newEvent); // Add to beginning
-        if (memEvents.length > 100) memEvents.pop();
-        res.json({ success: true, message: 'Evento salvo em memória' });
+        const eventWithId = { ...req.body, id: Date.now(), timestamp: new Date().toISOString() };
+        memHistory.unshift(eventWithId);
+        if (memHistory.length > 100) memHistory.pop();
+        saveMemHistory();
+        res.json({ success: true, message: 'Histórico salvo em memória (DB offline)' });
     }
 });
+
+// Helper: Salvar histórico em arquivo quando o DB está offline
+function saveMemHistory() {
+    try {
+        const fs = require('fs');
+        fs.writeFileSync('./history_data.json', JSON.stringify(memHistory, null, 2));
+    } catch (e) {}
+}
 
 // Routes — Orders
 app.get('/api/orders', async (req, res) => {
@@ -323,6 +346,18 @@ app.get('/api/orders', async (req, res) => {
         res.json(memOrders);
     }
 });
+
+// Helper: Salvar pedidos em arquivo quando o DB está offline
+function saveMemOrders() {
+    try {
+        const fs = require('fs');
+        fs.writeFileSync('./orders_data.json', JSON.stringify(memOrders, null, 2));
+        console.log('✅ orders_data.json atualizado com sucesso.');
+    } catch (e) {
+        console.error('❌ Erro ao salvar orders_data.json:', e);
+    }
+}
+
 app.post('/api/orders', async (req, res) => {
     const orderDataReceived = req.body;
     console.log('📦 Novo pedido recebido:', JSON.stringify(orderDataReceived, null, 2));
@@ -373,6 +408,7 @@ app.post('/api/orders', async (req, res) => {
         } else {
             memOrders.push({ ...orderDataReceived, lastUpdate: new Date().toISOString() });
         }
+        saveMemOrders();
         res.json({ success: true, message: 'Salvo em memória (DB offline)' });
     }
 });

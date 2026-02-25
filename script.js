@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 8000);
-            const apiResponse = await fetch(`${API_URL}/api/products`, { signal: controller.signal });
+            const apiResponse = await fetch(`${API_URL}/api/products?t=${Date.now()}`, { signal: controller.signal });
             clearTimeout(timeout);
             if (apiResponse.ok) {
                 apiProducts = await apiResponse.json();
