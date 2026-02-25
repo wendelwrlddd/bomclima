@@ -231,14 +231,16 @@ app.post('/api/products', async (req, res) => {
         }
     } catch (err) {
         console.warn('⚠️ Salvando em memória: POST /api/products');
-        if (id) {
-            const idx = memProducts.findIndex(p => p.id == id);
-            if (idx !== -1) memProducts[idx] = { ...memProducts[idx], ...req.body };
+        const productToSave = { ...req.body };
+        if (!productToSave.id) productToSave.id = Date.now();
+        
+        const idx = memProducts.findIndex(p => p.id == productToSave.id);
+        if (idx !== -1) {
+            memProducts[idx] = { ...memProducts[idx], ...productToSave };
         } else {
-            const newProd = { ...req.body, id: Date.now() };
-            memProducts.push(newProd);
+            memProducts.push(productToSave);
         }
-        res.json({ success: true, message: 'Salvo em memória (DB offline)' });
+        res.json({ success: true, message: 'Salvo em memória (DB offline)', id: productToSave.id });
     }
 });
 
