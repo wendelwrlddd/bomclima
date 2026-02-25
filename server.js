@@ -1,3 +1,4 @@
+// Versão: 1.0.1 - Atualizado em 25/02/2026 às 18:50
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
