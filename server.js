@@ -1,4 +1,4 @@
-// Versão: 1.0.2 - FORCING REDEPLOY - [6:55 PM]
+// Versão: 1.0.3 - FIXING ENTRY POINT - [7:05 PM]
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
