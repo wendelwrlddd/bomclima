@@ -532,8 +532,18 @@ class Dashboard {
         };
 
         if (detailsSaveImg) detailsSaveImg.onclick = () => {
-            this.handleDetailsSubmit();
-            alert('Foto e informações confirmadas com sucesso!');
+            const img = document.getElementById('viewMainImage');
+            const name = document.getElementById('viewName').value || 'produto';
+            if (img && img.src) {
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert('Nenhuma foto disponível para download.');
+            }
         };
 
         if (saveDetailsChanges) saveDetailsChanges.onclick = () => this.handleDetailsSubmit();
