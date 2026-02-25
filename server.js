@@ -10,15 +10,21 @@ const port = process.env.PORT || 3000;
 // Configuração simplificada e robusta de CORS
 
 app.use(cors({
-    origin: [
-        'https://bomclima.top',
-        'https://www.bomclima.top',
-        'https://bomclima-itabuna.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:3000'
-    ],
+    origin: function (origin, callback) {
+        // Permitir sem origin (mobile/curl) ou se for um dos nossos domínios
+        if (!origin || 
+            origin.includes('bomclima.top') || 
+            origin.includes('bomclima-itabuna.vercel.app') || 
+            origin.includes('localhost') || 
+            origin.includes('127.0.0.1')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado pelo CORS do Cabrunco'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
 }));
 
 // Habilitar pre-flight para todas as rotas
