@@ -534,56 +534,62 @@ class Dashboard {
         if (detailsSaveImg) detailsSaveImg.onclick = async () => {
             const img = document.getElementById('viewMainImage');
             const name = document.getElementById('viewName').value || 'produto';
-            if (img && img.src) {
-                const btn = detailsSaveImg;
-                const originalText = btn.textContent;
-                btn.disabled = true;
-                btn.textContent = 'Preparando...';
-                
-                try {
-                    // Fetch universal (funciona com data:image e URLs relativos/absolutos)
-                    const response = await fetch(img.src);
-                    const blob = await response.blob();
-                    const fileName = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
+            
+            if (!img || !img.src || img.src.includes('undefined') || img.src === window.location.href) {
+                alert('Erro: Nenhuma imagem válida encontrada para download.');
+                return;
+            }
 
-                    // Tentar usar File System Access API para "escolher pasta"
-                    if (window.showSaveFilePicker) {
-                        try {
-                            const handle = await window.showSaveFilePicker({
-                                suggestedName: fileName,
-                                types: [{ description: 'Imagem PNG', accept: { 'image/png': ['.png'] } }]
-                            });
-                            const writable = await handle.createWritable();
-                            await writable.write(blob);
-                            await writable.close();
+            const btn = detailsSaveImg;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.textContent = 'Baixando...';
+            
+            try {
+                const response = await fetch(img.src);
+                if (!response.ok) throw new Error('Falha ao buscar imagem no servidor');
+                const blob = await response.blob();
+                const fileName = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
+
+                // Método 1: Escolher pasta (API moderna)
+                if (window.showSaveFilePicker) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: fileName,
+                            types: [{ description: 'Imagem PNG', accept: { 'image/png': ['.png'] } }]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return; 
+                    } catch (err) {
+                        if (err.name === 'AbortError') {
                             btn.disabled = false;
-                            btn.textContent = originalText;
-                            return; 
-                        } catch (err) {
-                            if (err.name === 'AbortError') {
-                                btn.disabled = false;
-                                btn.textContent = originalText;
-                                return;
-                            }
-                            console.error('Erro na API de File System:', err);
+                            btn.innerHTML = originalText;
+                            return;
                         }
+                        console.warn('showSaveFilePicker falhou, tentando fallback...', err);
                     }
-
-                    // Fallback: Download tradicional
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                } catch (err) {
-                    console.error('Erro ao realizar download:', err);
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = originalText;
                 }
+
+                // Método 2: Download tradicional (Fallback)
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error('Erro no download:', err);
+                alert('Erro ao processar download: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (window.lucide) lucide.createIcons();
             }
         };
 
