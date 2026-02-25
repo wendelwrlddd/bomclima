@@ -40,8 +40,14 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.1.0'));
+app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.1.2'));
 app.get('/health', (req, res) => res.send('OK'));
+
+// ✅ Servir arquivos estáticos (Dashboard, JS, Imagens)
+// Importante para o Railway conseguir entregar o dashboard.js e as fotos
+const path = require('path');
+app.use(express.static('.'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/test-cors', (req, res) => {
     res.json({ message: 'CORS Manual Ativo', debug: 'suprema-v1' });
