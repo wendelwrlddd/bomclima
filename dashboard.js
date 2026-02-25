@@ -534,43 +534,56 @@ class Dashboard {
         if (detailsSaveImg) detailsSaveImg.onclick = async () => {
             const img = document.getElementById('viewMainImage');
             const name = document.getElementById('viewName').value || 'produto';
-            if (img && img.src && img.src.startsWith('data:image')) {
-                const base64Data = img.src.split(',')[1];
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/png' });
-                const fileName = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
+            if (img && img.src) {
+                const btn = detailsSaveImg;
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Preparando...';
+                
+                try {
+                    // Fetch universal (funciona com data:image e URLs relativos/absolutos)
+                    const response = await fetch(img.src);
+                    const blob = await response.blob();
+                    const fileName = `bomclima-${name.toLowerCase().replace(/\s+/g, '-')}.png`;
 
-                // Tentar usar File System Access API para "escolher pasta"
-                if (window.showSaveFilePicker) {
-                    try {
-                        const handle = await window.showSaveFilePicker({
-                            suggestedName: fileName,
-                            types: [{ description: 'Imagem PNG', accept: { 'image/png': ['.png'] } }]
-                        });
-                        const writable = await handle.createWritable();
-                        await writable.write(blob);
-                        await writable.close();
-                        return; // Sucesso com seletor de pasta
-                    } catch (err) {
-                        if (err.name === 'AbortError') return; // Usuário cancelou
-                        console.error('Erro na API de File System:', err);
+                    // Tentar usar File System Access API para "escolher pasta"
+                    if (window.showSaveFilePicker) {
+                        try {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: fileName,
+                                types: [{ description: 'Imagem PNG', accept: { 'image/png': ['.png'] } }]
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                            return; 
+                        } catch (err) {
+                            if (err.name === 'AbortError') {
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                                return;
+                            }
+                            console.error('Erro na API de File System:', err);
+                        }
                     }
-                }
 
-                // Fallback: Download tradicional se API não suportada
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
+                    // Fallback: Download tradicional
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error('Erro ao realizar download:', err);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
             }
         };
 
