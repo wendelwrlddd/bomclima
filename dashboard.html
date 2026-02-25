@@ -358,6 +358,86 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+
+        .quick-edit-field label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .details-view-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2.5rem;
+            margin-top: 1rem;
+        }
+
+        .details-image-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .main-details-img {
+            width: 100%;
+            height: 320px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .details-info-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .editable-field {
+            position: relative;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid transparent;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .editable-field:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: var(--border);
+        }
+
+        .editable-field i.edit-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .editable-field:hover i.edit-icon {
+            opacity: 1;
+        }
+
+        .details-price-badge {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        .details-promo-badge {
+            font-size: 1rem;
+            color: var(--danger);
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -382,7 +462,7 @@
             </a>
         </nav>
         <div style="margin-top: auto; padding-bottom: 2rem;">
-            <a href="index.html" class="nav-item">
+            <a href="https://bomclima.top/" class="nav-item" target="_blank">
                 <i data-lucide="external-link"></i> Ver Loja
             </a>
             <a href="#" class="nav-item" id="logoutBtn" style="color: #ef4444;">
@@ -554,6 +634,79 @@
                     <button type="submit" class="btn btn-primary">Salvar Produto</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModalOverlay">
+        <div class="modal" style="width: 900px; max-width: 95vw;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0;">Ficha do Produto</h2>
+                <button class="action-btn" id="closeDetailsModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="details-view-container">
+                <!-- Left: View Look -->
+                <div class="details-image-card">
+                    <img id="viewMainImage" src="" class="main-details-img" alt="Produto">
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn btn-secondary" style="flex: 1; font-size: 0.8rem;" id="detailsChangeImg">
+                            <i data-lucide="upload" style="width: 14px;"></i> Mudar Foto
+                        </button>
+                        <button class="btn btn-primary" style="flex: 1; font-size: 0.8rem;" id="detailsSaveImg">
+                            <i data-lucide="save" style="width: 14px;"></i> Salvar Foto
+                        </button>
+                    </div>
+                    <input type="file" id="detailsFileInput" style="display: none;" accept="image/*">
+                </div>
+
+                <!-- Right: Information -->
+                <div class="details-info-card">
+                    <div id="detailsCategoryBadge" style="margin-bottom: -0.5rem;">
+                        <!-- Category badge injected via JS -->
+                    </div>
+                    <div class="quick-edit-field">
+                        <label>Nome do Produto</label>
+                        <div class="editable-field">
+                            <input type="text" id="viewName" style="background: transparent; border: none; font-size: 1.5rem; font-weight: 800; padding: 0.25rem 0;">
+                            <i data-lucide="edit-3" class="edit-icon" style="width: 16px;"></i>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="quick-edit-field">
+                            <label>Preço de Venda (Por)</label>
+                            <div class="editable-field">
+                                <input type="text" id="viewPrice" style="background: transparent; border: none; font-size: 1.5rem; font-weight: 700; color: var(--success); padding: 0.25rem 0;">
+                                <i data-lucide="edit-3" class="edit-icon" style="width: 16px;"></i>
+                            </div>
+                        </div>
+                        <div class="quick-edit-field">
+                            <label>Preço Original (De)</label>
+                            <div class="editable-field">
+                                <input type="text" id="viewPromo" style="background: transparent; border: none; font-size: 1.25rem; font-weight: 600; color: var(--text-dim); text-decoration: line-through; padding: 0.25rem 0;">
+                                <i data-lucide="edit-3" class="edit-icon" style="width: 16px;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-edit-field">
+                        <label>Descrição Completa</label>
+                        <div class="editable-field">
+                            <textarea id="viewDescription" rows="6" style="background: transparent; border: none; width: 100%; color: var(--text-dim); line-height: 1.6; resize: none;"></textarea>
+                            <i data-lucide="edit-3" class="edit-icon" style="width: 16px; top: 20px;"></i>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: auto;">
+                        <button class="btn btn-secondary" id="cancelDetails">Cancelar</button>
+                        <button class="btn btn-primary" id="saveDetailsChanges">
+                            <i data-lucide="check" style="width: 18px;"></i> Salvar Tudo
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

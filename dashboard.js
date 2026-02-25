@@ -383,6 +383,9 @@ class Dashboard {
                 <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
                     <td style="padding: 1rem 0.75rem; text-align: center;">
                         <div class="actions" style="justify-content: center;">
+                            <button class="action-btn" onclick="dashboard.viewProductDetails(${p.id})" title="Ver Detalhes">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </button>
                             <button class="action-btn" onclick="dashboard.editProduct(${p.id})" title="Editar">
                                 <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
                             </button>
@@ -497,6 +500,37 @@ class Dashboard {
             }
         };
 
+        // Details Modal Listeners
+        const detailsModal = document.getElementById('detailsModalOverlay');
+        const closeDetails = document.getElementById('closeDetailsModal');
+        const cancelDetails = document.getElementById('cancelDetails');
+        const detailsChangeImg = document.getElementById('detailsChangeImg');
+        const detailsFileInput = document.getElementById('detailsFileInput');
+        const saveDetailsChanges = document.getElementById('saveDetailsChanges');
+
+        if (closeDetails) closeDetails.onclick = () => detailsModal.style.display = 'none';
+        if (cancelDetails) cancelDetails.onclick = () => detailsModal.style.display = 'none';
+        
+        if (detailsChangeImg) detailsChangeImg.onclick = () => detailsFileInput.click();
+        
+        if (detailsFileInput) detailsFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById('viewMainImage').src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        if (detailsSaveImg) detailsSaveImg.onclick = () => {
+            this.handleDetailsSubmit();
+            alert('Foto e informações confirmadas com sucesso!');
+        };
+
+        if (saveDetailsChanges) saveDetailsChanges.onclick = () => this.handleDetailsSubmit();
+
         document.getElementById('logoutBtn').onclick = (e) => {
             e.preventDefault();
             if (confirm('Deseja realmente sair?')) {
@@ -506,6 +540,7 @@ class Dashboard {
 
         window.onclick = (event) => {
             if (event.target == modal) modal.style.display = 'none';
+            if (event.target == detailsModal) detailsModal.style.display = 'none';
         };
     }
 
@@ -599,6 +634,85 @@ class Dashboard {
 
         document.getElementById('modalTitle').textContent = 'Editar Produto';
         document.getElementById('modalOverlay').style.display = 'flex';
+    }
+
+    viewProductDetails(id) {
+        const p = this.products.find(prod => prod.id == id);
+        if (!p) return;
+
+        this.currentEditingId = id;
+        document.getElementById('viewName').value = p.name;
+        
+        const hasPromo = p.promoPrice && p.promoPrice !== '0,00' && p.promoPrice !== p.price;
+        
+        // viewPrice = Por (Selling), viewPromo = De (Original)
+        if (hasPromo) {
+            document.getElementById('viewPrice').value = p.promoPrice.replace('R$', '').trim();
+            document.getElementById('viewPromo').value = p.price.replace('R$', '').trim();
+        } else {
+            document.getElementById('viewPrice').value = p.price.replace('R$', '').trim();
+            document.getElementById('viewPromo').value = '';
+        }
+        
+        document.getElementById('viewDescription').value = p.description || '';
+        
+        const cat = Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Sem categoria');
+        document.getElementById('detailsCategoryBadge').innerHTML = `
+            <span class="badge badge-category" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; text-transform: uppercase;">${cat}</span>
+        `;
+        
+        const imgSrc = p.imageName ? (p.imageName.startsWith('data:image') ? p.imageName : `./uploads/${p.imageName}`) : '';
+        document.getElementById('viewMainImage').src = imgSrc;
+        
+        document.getElementById('detailsModalOverlay').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    async handleDetailsSubmit() {
+        const id = this.currentEditingId;
+        const p = this.products.find(prod => prod.id == id);
+        if (!p) return;
+
+        const porVal = document.getElementById('viewPrice').value.replace('R$', '').trim();
+        const deVal = document.getElementById('viewPromo').value.replace('R$', '').trim();
+
+        // Logic: if deVal (Original) is empty, then price = porVal and promo = empty.
+        // If deVal exists, then price = deVal and promoPrice = porVal.
+        const finalPrice = deVal ? `R$ ${deVal}` : `R$ ${porVal}`;
+        const finalPromo = deVal ? `R$ ${porVal}` : '';
+
+        const productData = {
+            ...p,
+            name: document.getElementById('viewName').value,
+            price: finalPrice,
+            promoPrice: finalPromo,
+            description: document.getElementById('viewDescription').value,
+            imageName: document.getElementById('viewMainImage').src.startsWith('data:image') ? document.getElementById('viewMainImage').src : p.imageName
+        };
+
+        try {
+            const response = await fetch(`${this.API_URL}/api/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData)
+            });
+
+            if (response.ok) {
+                const index = this.products.findIndex(prod => prod.id == id);
+                this.products[index] = productData;
+                this.logEvent('edit', productData, `Ficha técnica atualizada`);
+                
+                this.filteredProducts = [...this.products];
+                this.save();
+                this.render();
+                document.getElementById('detailsModalOverlay').style.display = 'none';
+            } else {
+                alert('Erro ao salvar no servidor Railway');
+            }
+        } catch (err) {
+            console.error('Erro ao salvar detalhes:', err);
+            alert('Erro de conexão.');
+        }
     }
 
     async deleteProduct(id) {
