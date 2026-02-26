@@ -45,7 +45,7 @@ window.showProductDetails = function(productId) {
     if (document.getElementById('detail-image')) document.getElementById('detail-image').src = product.image;
     if (document.getElementById('detail-title')) document.getElementById('detail-title').textContent = product.name;
     
-    const hasPromo = product.promoPrice && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00';
+    const hasPromo = product.promoPrice && String(product.promoPrice).trim() !== '' && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00' && product.promoPrice !== '0,00';
     const priceEl = document.getElementById('detail-price');
     if (priceEl) {
         priceEl.innerHTML = `
