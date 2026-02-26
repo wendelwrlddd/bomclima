@@ -246,9 +246,11 @@
             <!-- Categorias Populares (Moved here) -->
             <section class="categories" id="categories" style="padding: 2rem 0; margin-top: 2rem;">
                 <div class="container">
-                    <div class="section-header" data-aos="fade-up">
-                        <h2 class="section-title">Categorias Populares</h2>
-                        <div class="section-line"></div>
+                    <div class="section-header" data-aos="fade-up" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                        <h2 class="section-title" style="margin: 0; padding-bottom: 0;">Categorias Populares</h2>
+                        <button id="theme-toggle" class="btn btn-outline" style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="moon" id="theme-icon"></i> <span id="theme-text">Modo Noturno</span>
+                        </button>
                     </div>
                     <div class="categories-grid" id="dynamic-categories-grid">
                         <!-- Javascript will populate this -->

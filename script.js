@@ -255,6 +255,37 @@ window.searchCEP = async function(cep) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Dark Mode Toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    
+    // Check local storage for theme
+    const currentTheme = localStorage.getItem('bomclima_theme');
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+        if (themeText) themeText.textContent = 'Modo Claro';
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('bomclima_theme', 'light');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+                if (themeText) themeText.textContent = 'Modo Noturno';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('bomclima_theme', 'dark');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+                if (themeText) themeText.textContent = 'Modo Claro';
+            }
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
     // Mobile Menu Toggle
     const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
     const nav = document.querySelector('.nav');
