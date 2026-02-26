@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderFeaturedProducts() {
         const grid = document.getElementById('featured-products-grid');
         if (!grid) return;
-        const featured = products.filter(p => p.tags.includes('featured') && p.stockStatus !== 'outofstock').slice(0, 8);
+        const featured = products.filter(p => p.tags.includes('featured') && p.stockStatus === 'instock').slice(0, 8);
         grid.innerHTML = featured.map(p => {
             const hasPromo = p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00';
             return `
@@ -556,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSaleProducts() {
         const grid = document.getElementById('sale-products-grid');
         if (!grid) return;
-        const sales = products.filter(p => p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00' && p.stockStatus !== 'outofstock').slice(0, 8);
+        const sales = products.filter(p => p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00' && p.stockStatus === 'instock').slice(0, 8);
         grid.innerHTML = sales.map(p => `
             <div class="product-card-featured" data-aos="fade-up">
                 <div class="product-image-container">
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const productsGrid = document.querySelector('.products-grid');
         if (!productsGrid) return;
         productsGrid.innerHTML = '';
-        const filtered = products.filter(p => p.stockStatus !== 'outofstock' && (p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query) || (p.brand && p.brand.toLowerCase().includes(query))));
+        const filtered = products.filter(p => p.stockStatus === 'instock' && (p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query) || (p.brand && p.brand.toLowerCase().includes(query))));
         if (filtered.length === 0) {
             productsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #6B7280;">Nenhum produto encontrado para sua busca.</div>';
             return;
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnShowAll.addEventListener('click', () => {
             const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'popular';
             const query = searchInput?.value.toLowerCase().trim();
-            let filtered = products.filter(p => p.stockStatus !== 'outofstock');
+            let filtered = products.filter(p => p.stockStatus === 'instock');
             if (query) {
                 filtered = filtered.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query) || (p.brand && p.brand.toLowerCase().includes(query)));
             } else if (activeTab !== 'all') {
@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!productsGrid) return;
         productsGrid.innerHTML = '';
         if (btnShowAll) btnShowAll.style.display = 'inline-block';
-        let filtered = products.filter(p => p.stockStatus !== 'outofstock');
+        let filtered = products.filter(p => p.stockStatus === 'instock');
         if (filter !== 'all') { filtered = filtered.filter(p => p.tags.includes(filter) || p.category === filter); }
         filtered.slice(0, 20).forEach(product => renderSingleProduct(productsGrid, product));
         if (window.lucide) window.lucide.createIcons();
