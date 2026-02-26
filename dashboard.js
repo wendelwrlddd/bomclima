@@ -643,7 +643,7 @@ class Dashboard {
             categories: [category],
             sku,
             price,
-            promoPrice,
+            promoPrice: promoPrice && promoPrice.trim() !== '' ? promoPrice : '',
             stock,
             stockStatus: onBackorder ? 'onbackorder' : (stock > 0 ? 'instock' : 'outofstock'),
             imageName,
@@ -766,7 +766,7 @@ class Dashboard {
             ...p,
             name: document.getElementById('viewName').value,
             price: finalPrice,
-            promoPrice: finalPromo,
+            promoPrice: finalPromo && finalPromo.trim() !== '' ? finalPromo : '',
             description: document.getElementById('viewDescription').value,
             imageName: document.getElementById('viewMainImage').src.startsWith('data:image') ? document.getElementById('viewMainImage').src : p.imageName
         };
