@@ -483,7 +483,7 @@ class Dashboard {
 
         if (form) form.onsubmit = (e) => {
             e.preventDefault();
-            this.handleFormSubmit();
+            this.handleFormSubmit(e);
             modal.style.display = 'none';
         };
 
@@ -625,7 +625,7 @@ class Dashboard {
         this.render();
     }
 
-    async handleFormSubmit() {
+    async handleFormSubmit(e) {
         const id = document.getElementById('productId').value;
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
