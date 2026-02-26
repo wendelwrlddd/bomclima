@@ -282,20 +282,41 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
     const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku } = req.body;
+    
+    // Convert undefined to null to prevent mysql2 crash
+    const safeNull = val => val === undefined ? null : val;
+    const nameVal = safeNull(name);
+    const catsVal = categories ? JSON.stringify(categories) : null;
+    const priceVal = safeNull(price);
+    const promoVal = safeNull(promoPrice);
+    const stockVal = stock || 0;
+    const ssVal = safeNull(stockStatus);
+    const imgVal = safeNull(imageName);
+    const descVal = safeNull(description);
+    const skuVal = safeNull(sku);
+
     try {
         if (id) {
             // Se já tem ID, tenta atualizar
-            await q(
+            const [result] = await q(
                 'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=? WHERE id=?',
-                [name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku, id.toString()]
+                [nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, id.toString()]
             );
+            
+            if (result && result.affectedRows === 0) {
+                // Produto existe no JSON estático, mas ainda não estava no BD!
+                await q(
+                    'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [id.toString(), nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal]
+                );
+            }
             res.json({ success: true, message: 'Produto atualizado no Banco', id: id.toString() });
         } else {
             // Se não tem ID, cria um novo
             const newId = Date.now().toString();
             await q(
                 'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [newId, name, JSON.stringify(categories), price, promoPrice, stock, stockStatus, imageName, description, sku || null]
+                [newId, nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal]
             );
             res.json({ success: true, message: 'Produto criado no Banco', id: newId });
         }
