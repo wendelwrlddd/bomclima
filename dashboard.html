@@ -19,13 +19,41 @@
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
+            --bg-dark: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-dim: #475569;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+            
+            --sidebar-bg: #ffffff;
+            --input-bg: rgba(0, 0, 0, 0.05);
+            --input-focus: rgba(0, 0, 0, 0.1);
+            --input-color: #0f172a;
+            --th-bg: #f1f5f9;
+            --btn-sec-bg: #e2e8f0;
+            --btn-sec-color: #0f172a;
+            --hover-bg: rgba(0, 0, 0, 0.05);
+            --modal-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
             --bg-dark: #0f172a;
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);
-            --danger: #ef4444;
-            --success: #10b981;
+            
+            --sidebar-bg: rgba(15, 23, 42, 0.95);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --input-focus: rgba(255, 255, 255, 0.12);
+            --input-color: white;
+            --th-bg: rgba(255, 255, 255, 0.05);
+            --btn-sec-bg: rgba(255, 255, 255, 0.05);
+            --btn-sec-color: white;
+            --hover-bg: rgba(255, 255, 255, 0.03);
+            --modal-bg: #0f172a;
         }
 
         * {
@@ -45,7 +73,7 @@
         /* Sidebar */
         .sidebar {
             width: 260px;
-            background: rgba(15, 23, 42, 0.95);
+            background: var(--sidebar-bg);
             border-right: 1px solid var(--border);
             padding: 2rem 1.5rem;
             display: flex;
@@ -175,7 +203,7 @@
         th {
             text-align: left;
             padding: 1rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--th-bg);
             font-weight: 600;
             color: var(--text-dim);
             font-size: 0.875rem;
@@ -278,11 +306,11 @@
 
         input, select, textarea {
             width: 100%;
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: 0.5rem;
             padding: 0.75rem;
-            color: white;
+            color: var(--input-color);
             font-family: inherit;
             outline: none;
             box-sizing: border-box;
@@ -291,13 +319,13 @@
 
         /* Fixed invisible text in dropdowns */
         select option {
-            background-color: #1e293b;
-            color: white;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
         }
 
         input:focus, select:focus, textarea:focus {
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.12);
+            background: var(--input-focus);
         }
 
         .modal-footer {
@@ -308,12 +336,12 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            background: var(--btn-sec-bg);
+            color: var(--btn-sec-color);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--border);
         }
         .hidden { display: none !important; }
 
@@ -488,6 +516,9 @@
                 </div>
                 <button class="btn btn-primary" id="openModal">
                     <i data-lucide="plus"></i> Novo
+                </button>
+                <button id="themeToggle" class="btn btn-secondary" title="Modo Noturno/Claro">
+                    <i data-lucide="moon" id="themeIcon"></i>
                 </button>
                 <button id="syncData" class="btn btn-secondary" title="Sincronizar">
                     <i data-lucide="refresh-cw"></i>

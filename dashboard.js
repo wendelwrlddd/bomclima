@@ -463,6 +463,33 @@ class Dashboard {
         const syncBtn = document.getElementById('syncData');
         const imageFile = document.getElementById('imageFile');
 
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        const currentTheme = localStorage.getItem('bomclima_theme') || 'dark';
+        applyTheme(currentTheme);
+
+        if (themeToggle) {
+            themeToggle.onclick = () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+                localStorage.setItem('bomclima_theme', newTheme);
+                applyTheme(newTheme);
+            };
+        }
+
         if (syncBtn) syncBtn.onclick = async () => {
             if (confirm('Deseja sincronizar os dados? Isso limpará alterações locais não salvas.')) {
                 localStorage.removeItem('bomclima_products');
