@@ -728,6 +728,8 @@ class Dashboard {
     editProduct(id) {
         const p = this.products.find(prod => prod.id == id);
         if (!p) return;
+        
+        this.currentEditingId = id;
 
         document.getElementById('productId').value = p.id;
         document.getElementById('name').value = p.name;
