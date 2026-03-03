@@ -38,6 +38,72 @@ const FULL_CATEGORIES = [
     "VENTILADOR", "VENTILADOR INTERNO AXO ATEGO", "ventilador interno Caminhao MB 1620"
 ];
 
+// --- Funções Auxiliares para Busca Inteligente (Fuzzy Search) ---
+function normalizeText(text) {
+    if (!text) return '';
+    return text.toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .toLowerCase()
+        .trim();
+}
+
+function levenshteinDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substituição
+                    Math.min(matrix[i][j - 1] + 1, // inserção
+                             matrix[i - 1][j] + 1) // deleção
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+function fuzzyMatch(token, target) {
+    if (!target) return false;
+    
+    // Busca abrangente inicial - se token contido integralmente no alvo
+    if (target.includes(token)) return true;
+    
+    // Palavras chaves ou muito curtas precisam de correspondencia mais exata
+    if (token.length <= 2) return target.includes(token);
+
+    // Quebra o target em palavras para testar possíveis erros de digitação em cada palavra individual
+    const targetWords = target.split(/[\s\W]+/);
+    for (const tWord of targetWords) {
+        if (!tWord) continue;
+        
+        // Determina tolerância a erros (1 erro se tamanho <= 5, 2 erros se > 5)
+        const maxErrors = token.length <= 5 ? 1 : 2;
+        
+        // Verifica a distância entre as palavras para otimização (só se fizer sentido)
+        if (Math.abs(tWord.length - token.length) <= maxErrors) {
+            if (levenshteinDistance(token, tWord) <= maxErrors) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+// ----------------------------------------------------------------
+
 class Dashboard {
     constructor() {
         this.products = [];
@@ -636,13 +702,38 @@ class Dashboard {
     }
 
     handleFilter() {
-        const query = document.getElementById('productSearch').value.toLowerCase();
+        const rawQuery = document.getElementById('productSearch').value;
+        const query = normalizeText(rawQuery);
         const category = document.getElementById('categoryFilter').value;
 
+        // Se query estiver vazio, retorna todos os produtos que atendem ao filtro de categoria
+        if (!query) {
+            this.filteredProducts = this.products.filter(p => {
+                const cats = Array.isArray(p.categories) ? p.categories : [p.category];
+                return category === 'all' || cats.includes(category);
+            });
+            this.render();
+            return;
+        }
+
+        // Divide a busca por palavras usando espaços (tokens), para achar em qualquer ordem
+        const queryTokens = query.split(/\s+/).filter(t => t.length > 0);
+
         this.filteredProducts = this.products.filter(p => {
-            const matchesSearch = p.name.toLowerCase().includes(query) || 
-                               (p.sku && p.sku.toLowerCase().includes(query)) ||
-                               (p.brand && p.brand.toLowerCase().includes(query));
+            const pName = normalizeText(p.name);
+            const pSku = normalizeText(p.sku || '');
+            const pBrand = normalizeText(p.brand || '');
+            const pCategory = Array.isArray(p.categories) 
+                ? normalizeText(p.categories.join(' ')) 
+                : normalizeText(p.category || '');
+            
+            // O produto deve corresponder a TODOS os tokens da busca digitada ("AND")
+            const matchesSearch = queryTokens.every(token => {
+                return fuzzyMatch(token, pName) ||
+                       fuzzyMatch(token, pSku) ||
+                       fuzzyMatch(token, pBrand) ||
+                       fuzzyMatch(token, pCategory);
+            });
             
             const cats = Array.isArray(p.categories) ? p.categories : [p.category];
             const matchesCategory = category === 'all' || cats.includes(category);
