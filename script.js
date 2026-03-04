@@ -48,10 +48,14 @@ window.showProductDetails = function(productId) {
     const hasPromo = product.promoPrice && String(product.promoPrice).trim() !== '' && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00' && product.promoPrice !== '0,00';
     const priceEl = document.getElementById('detail-price');
     if (priceEl) {
-        priceEl.innerHTML = `
-            ${hasPromo ? `<span style="font-size: 1rem; color: #ef4444; text-decoration: line-through; margin-right: 10px;">${product.price}</span>` : ''}
-            <span>${hasPromo ? product.promoPrice : product.price}</span>
-        `;
+        if (product.hidePrice) {
+            priceEl.innerHTML = `<span>Sob Consulta</span>`;
+        } else {
+            priceEl.innerHTML = `
+                ${hasPromo ? `<span style="font-size: 1rem; color: #ef4444; text-decoration: line-through; margin-right: 10px;">${product.price}</span>` : ''}
+                <span>${hasPromo ? product.promoPrice : product.price}</span>
+            `;
+        }
     }
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -63,6 +67,11 @@ window.openCheckout = async function() {
     if (!currentOpenProductId) return;
     const product = products.find(p => p.id == currentOpenProductId);
     if (!product) return;
+    
+    if (product.hidePrice) {
+        alert("Este produto está sob consulta. Por favor, entre em contato conosco pelo WhatsApp para adquiri-lo.");
+        return;
+    }
 
     // Visual feedback on the button
     const buyBtn = document.querySelector('.btn-buy');
@@ -532,17 +541,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const featured = products.filter(p => p.tags.includes('featured') && p.stockStatus === 'instock').slice(0, 8);
         grid.innerHTML = featured.map(p => {
             const hasPromo = p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00';
+            
+            let priceBoxHtml = '';
+            if (p.hidePrice) {
+                priceBoxHtml = `<span class="current-price" style="font-size: 14px; font-weight: bold;">Sob Consulta</span>`;
+            } else {
+                priceBoxHtml = `
+                    ${hasPromo ? `<span class="old-price">${p.price}</span>` : ''}
+                    <span class="current-price">${hasPromo ? p.promoPrice : p.price}</span>
+                `;
+            }
+
             return `
                 <div class="product-card-featured" data-aos="fade-up">
                     <div class="product-image-container">
                         <img src="${p.image}" alt="${p.name}" class="product-img">
-                        ${hasPromo ? '<span class="product-badge" style="background: #ef4444;">Oferta</span>' : ''}
+                        ${(!p.hidePrice && hasPromo) ? '<span class="product-badge" style="background: #ef4444;">Oferta</span>' : ''}
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${p.name}</h3>
                         <div class="product-price-box">
-                            ${hasPromo ? `<span class="old-price">${p.price}</span>` : ''}
-                            <span class="current-price">${hasPromo ? p.promoPrice : p.price}</span>
+                            ${priceBoxHtml}
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="showProductDetails(${p.id})" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;">
                             Ver Detalhes
@@ -556,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSaleProducts() {
         const grid = document.getElementById('sale-products-grid');
         if (!grid) return;
-        const sales = products.filter(p => p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00' && p.stockStatus === 'instock').slice(0, 8);
+        const sales = products.filter(p => !p.hidePrice && p.promoPrice && String(p.promoPrice).trim() !== '' && p.promoPrice !== p.price && p.promoPrice !== 'R$ 0,00' && p.promoPrice !== '0,00' && p.stockStatus === 'instock').slice(0, 8);
         grid.innerHTML = sales.map(p => `
             <div class="product-card-featured" data-aos="fade-up">
                 <div class="product-image-container">
@@ -632,6 +651,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderSingleProduct(container, product) {
         const hasPromo = product.promoPrice && String(product.promoPrice).trim() !== '' && product.promoPrice !== product.price && product.promoPrice !== 'R$ 0,00' && product.promoPrice !== '0,00';
+        
+        let priceBoxHtml = '';
+        if (product.hidePrice) {
+            priceBoxHtml = `<span class="product-price" style="font-size: 14px; font-weight: bold;">Sob Consulta</span>`;
+        } else {
+            priceBoxHtml = `
+                <div style="display: flex; flex-direction: column;">
+                    ${hasPromo ? `<span style="font-size: 0.75rem; color: #ef4444; text-decoration: line-through;">${product.price}</span>` : ''}
+                    <span class="product-price">${hasPromo ? product.promoPrice : product.price}</span>
+                </div>
+            `;
+        }
+
         const productCard = document.createElement('div');
         productCard.classList.add('product-card');
         productCard.innerHTML = `
@@ -643,10 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 class="product-title">${product.name}</h3>
                 <div class="product-rating">${getStars(product.rating)}</div>
                 <div class="product-footer">
-                    <div style="display: flex; flex-direction: column;">
-                        ${hasPromo ? `<span style="font-size: 0.75rem; color: #ef4444; text-decoration: line-through;">${product.price}</span>` : ''}
-                        <span class="product-price">${hasPromo ? product.promoPrice : product.price}</span>
-                    </div>
+                    ${priceBoxHtml}
                     <button class="btn btn-primary btn-sm" onclick="showProductDetails(${product.id})" style="padding: 0.5rem 1rem; font-size: 0.8rem;">Ver Detalhes</button>
                 </div>
             </div>
@@ -744,6 +773,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const product = products.find(p => p.id === currentOpenProductId);
         if (product) {
+            if (product.hidePrice) {
+                alert("Este produto está sob consulta. Por favor, entre em contato conosco pelo WhatsApp para adquiri-lo.");
+                return;
+            }
             const existing = cart.find(item => item.id === product.id);
             if (existing) { existing.quantity += 1; } 
             else {

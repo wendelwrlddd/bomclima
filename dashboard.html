@@ -365,7 +365,7 @@
         }
 
         /* View Independent Scrolling */
-        #dashboardView, #historyView, #ordersView {
+        #dashboardView, #historyView, #ordersView, #hidePricesView {
             flex: 1;
             overflow-y: auto;
             padding-right: 0.5rem;
@@ -481,6 +481,9 @@
             <a href="#" class="nav-item" id="navOrders" style="position: relative;">
                 <i data-lucide="shopping-bag"></i> Pedidos Gerados
                 <span id="orderBadge" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+            </a>
+            <a href="#" class="nav-item" id="navHidePrices">
+                <i data-lucide="eye-off"></i> Ocultar Preço
             </a>
             <a href="#" class="nav-item">
                 <i data-lucide="users"></i> Usuários
@@ -601,6 +604,34 @@
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody">
+                        <!-- Javascript will populate -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="hidePricesView" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0;">Ocultar Preços no Site</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" id="btnSelectAllHide">Marcar Todos</button>
+                    <button class="btn btn-primary" id="btnSaveHidePrices">
+                        <i data-lucide="save"></i> Salvar
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">Ocultar</th>
+                            <th style="width: 60px;">Foto</th>
+                            <th style="min-width: 250px;">Nome do Produto</th>
+                            <th style="width: 150px;">Preço Atual</th>
+                            <th style="width: 200px;">Categoria</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hidePricesTableBody">
                         <!-- Javascript will populate -->
                     </tbody>
                 </table>

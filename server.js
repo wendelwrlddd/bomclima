@@ -134,6 +134,7 @@ async function initDB(conn) {
                 imageName LONGTEXT,
                 description LONGTEXT, -- Mudado para LONGTEXT
                 sku VARCHAR(100),
+                hidePrice TINYINT(1) DEFAULT 0,
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -178,6 +179,11 @@ async function initDB(conn) {
         // SKU Check
         if (!prodCols.find(c => c.Field === 'sku')) {
             await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
+        }
+
+        // HidePrice Check
+        if (!prodCols.find(c => c.Field === 'hidePrice')) {
+            await conn.execute(`ALTER TABLE products ADD COLUMN hidePrice TINYINT(1) DEFAULT 0 AFTER sku`);
         }
 
         // Force LONGTEXT for images and descriptions (MUITO IMPORTANTE)
@@ -281,7 +287,7 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku } = req.body;
+    const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice } = req.body;
     
     // Convert undefined to null to prevent mysql2 crash
     const safeNull = val => val === undefined ? null : val;
@@ -294,20 +300,21 @@ app.post('/api/products', async (req, res) => {
     const imgVal = safeNull(imageName);
     const descVal = safeNull(description);
     const skuVal = safeNull(sku);
+    const hpVal = hidePrice ? 1 : 0;
 
     try {
         if (id) {
             // Se já tem ID, tenta atualizar
             const [result] = await q(
-                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=? WHERE id=?',
-                [nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, id.toString()]
+                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=?, hidePrice=? WHERE id=?',
+                [nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal, id.toString()]
             );
             
             if (result && result.affectedRows === 0) {
                 // Produto existe no JSON estático, mas ainda não estava no BD!
                 await q(
-                    'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [id.toString(), nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal]
+                    'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [id.toString(), nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
                 );
             }
             res.json({ success: true, message: 'Produto atualizado no Banco', id: id.toString() });
@@ -315,8 +322,8 @@ app.post('/api/products', async (req, res) => {
             // Se não tem ID, cria um novo
             const newId = Date.now().toString();
             await q(
-                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [newId, nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal]
+                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [newId, nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
             );
             res.json({ success: true, message: 'Produto criado no Banco', id: newId });
         }
@@ -358,6 +365,36 @@ app.delete('/api/products/:id', async (req, res) => {
     } catch (err) {
         console.error('DELETE /api/products error:', err.message);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Batch update hidePrice API endpoint
+app.post('/api/products/hide-prices', async (req, res) => {
+    const { updates } = req.body;
+    // expect updates to be an array of { id, hidePrice }
+    if (!Array.isArray(updates)) {
+        return res.status(400).json({ error: 'Formato inválido. `updates` deve ser um array.' });
+    }
+    
+    try {
+        for (const update of updates) {
+            const hpVal = update.hidePrice ? 1 : 0;
+            const strId = update.id.toString();
+            await q('UPDATE products SET hidePrice=? WHERE id=?', [hpVal, strId]);
+        }
+        res.json({ success: true, message: 'Status de preço oculto atualizados no Banco' });
+    } catch (err) {
+        console.error('❌ Erro real ao atualizar hidePrices no Banco:', err);
+        console.warn('⚠️ Fallback acionado: POST /api/products/hide-prices');
+        
+        for (const update of updates) {
+            const index = memProducts.findIndex(p => p.id.toString() === update.id.toString());
+            if (index !== -1) {
+                memProducts[index].hidePrice = update.hidePrice ? 1 : 0;
+            }
+        }
+        saveMemProducts();
+        res.json({ success: true, message: 'Alterações salvas em memória (DB offline)' });
     }
 });
 

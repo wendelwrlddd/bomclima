@@ -200,26 +200,35 @@ class Dashboard {
         const navDashboard = document.getElementById('navDashboard');
         const navHistory = document.getElementById('navHistory');
         const navOrders = document.getElementById('navOrders');
+        const navHidePrices = document.getElementById('navHidePrices');
         const dashboardView = document.getElementById('dashboardView');
         const historyView = document.getElementById('historyView');
         const ordersView = document.getElementById('ordersView');
+        const hidePricesView = document.getElementById('hidePricesView');
 
         if (navDashboard && navHistory && navOrders) {
             navDashboard.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('dashboard', [navDashboard], [navHistory, navOrders], [dashboardView], [historyView, ordersView]);
+                this.switchView('dashboard', [navDashboard], [navHistory, navOrders, navHidePrices], [dashboardView], [historyView, ordersView, hidePricesView]);
             };
 
             navHistory.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('history', [navHistory], [navDashboard, navOrders], [historyView], [dashboardView, ordersView]);
+                this.switchView('history', [navHistory], [navDashboard, navOrders, navHidePrices], [historyView], [dashboardView, ordersView, hidePricesView]);
             };
 
             navOrders.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('orders', [navOrders], [navDashboard, navHistory], [ordersView], [dashboardView, historyView]);
+                this.switchView('orders', [navOrders], [navDashboard, navHistory, navHidePrices], [ordersView], [dashboardView, historyView, hidePricesView]);
                 document.getElementById('orderBadge').style.display = 'none';
             };
+
+            if (navHidePrices) {
+                navHidePrices.onclick = (e) => {
+                    e.preventDefault();
+                    this.switchView('hidePrices', [navHidePrices], [navDashboard, navHistory, navOrders], [hidePricesView], [dashboardView, historyView, ordersView]);
+                };
+            }
         }
         
         // Listen for storage changes from the main site
@@ -242,6 +251,7 @@ class Dashboard {
         if (view === 'dashboard') this.render();
         if (view === 'history') this.renderHistory();
         if (view === 'orders') this.renderOrders();
+        if (view === 'hidePrices') this.renderHidePrices();
     }
 
     handleOrderNotification() {
@@ -497,6 +507,47 @@ class Dashboard {
         lucide.createIcons();
     }
 
+    renderHidePrices() {
+        if (this.currentView !== 'hidePrices') return;
+        
+        const tableBody = document.getElementById('hidePricesTableBody');
+        if (!tableBody) return;
+
+        // Sort products alphabetically to make it easier to find
+        const sortedProducts = [...this.filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
+
+        tableBody.innerHTML = sortedProducts.map(p => {
+            const isChecked = p.hidePrice ? 'checked' : '';
+            return `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
+                    <td style="padding: 1rem 0.75rem; text-align: center;">
+                        <input type="checkbox" class="hide-price-cb" data-id="${p.id}" ${isChecked} style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        <div class="product-img-thumb" style="display: flex; align-items: center; justify-content: center; color: #64748b; width: 40px; height: 40px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,0.05);">
+                            ${p.imageName ? `
+                                <img src="${p.imageName.startsWith('data:image') ? p.imageName : `./uploads/${p.imageName}`}" 
+                                onerror="this.parentElement.innerHTML='<i data-lucide=\\'image\\' class=\\'w-4 h-4\\'></i>'; lucide.createIcons();" 
+                                style="width: 100%; height: 100%; object-fit: cover;">` : `
+                                <i data-lucide="image" class="w-4 h-4"></i>`}
+                        </div>
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        <span style="font-weight: 600;">${p.name}</span>
+                        ${p.sku ? `<br><code style="color: #94a3b8; font-size: 0.75rem;">${p.sku}</code>` : ''}
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        <span style="font-weight: 600; color: #10b981;">${p.promoPrice && p.promoPrice !== '0,00' ? p.promoPrice : p.price}</span>
+                    </td>
+                    <td style="padding: 1rem 0.75rem; color: #60a5fa; font-size: 0.813rem;">
+                        ${Array.isArray(p.categories) ? p.categories.join(', ') : (p.category || '-')}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
     renderHistory() {
         const container = document.getElementById('timelineContainer');
         const movesEl = document.getElementById('totalMoves');
@@ -601,6 +652,81 @@ class Dashboard {
         const detailsSaveImg = document.getElementById('detailsSaveImg');
         const detailsFileInput = document.getElementById('detailsFileInput');
         const saveDetailsChanges = document.getElementById('saveDetailsChanges');
+
+        const btnSelectAllHide = document.getElementById('btnSelectAllHide');
+        const btnSaveHidePrices = document.getElementById('btnSaveHidePrices');
+
+        if (btnSelectAllHide) {
+            btnSelectAllHide.onclick = () => {
+                const checkboxes = document.querySelectorAll('.hide-price-cb');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+                btnSelectAllHide.textContent = allChecked ? "Marcar Todos" : "Desmarcar Todos";
+            };
+        }
+
+        if (btnSaveHidePrices) {
+            btnSaveHidePrices.onclick = async () => {
+                const checkboxes = document.querySelectorAll('.hide-price-cb');
+                const updates = [];
+                
+                checkboxes.forEach(cb => {
+                    const id = cb.getAttribute('data-id');
+                    const hidePrice = cb.checked ? 1 : 0;
+                    
+                    // Only prepare updates if changed
+                    const p = this.products.find(prod => prod.id.toString() === id.toString());
+                    if (p && !!p.hidePrice !== !!hidePrice) {
+                        updates.push({ id, hidePrice });
+                    }
+                });
+
+                if (updates.length === 0) {
+                    alert('Nenhuma alteração detectada.');
+                    return;
+                }
+
+                btnSaveHidePrices.disabled = true;
+                const origHtml = btnSaveHidePrices.innerHTML;
+                btnSaveHidePrices.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Salvando...';
+                if (window.lucide) lucide.createIcons();
+
+                try {
+                    const response = await fetch(`${this.API_URL}/api/products/hide-prices`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ updates })
+                    });
+                    
+                    if (response.ok) {
+                        // Update local state
+                        updates.forEach(u => {
+                            const pId = u.id.toString();
+                            const p = this.products.find(prod => prod.id.toString() === pId);
+                            if (p) p.hidePrice = u.hidePrice;
+                        });
+                        this.filteredProducts = [...this.products];
+                        this.save();
+                        
+                        btnSaveHidePrices.innerHTML = '<i data-lucide="check"></i> Salvo!';
+                        lucide.createIcons();
+                        setTimeout(() => {
+                            btnSaveHidePrices.innerHTML = origHtml;
+                            btnSaveHidePrices.disabled = false;
+                            lucide.createIcons();
+                        }, 2000);
+                    } else {
+                        throw new Error('Erro na resposta do servidor');
+                    }
+                } catch (err) {
+                    console.error('Erro ao salvar preços ocultos:', err);
+                    alert('Erro de conexão ao salvar as alterações.');
+                    btnSaveHidePrices.innerHTML = origHtml;
+                    btnSaveHidePrices.disabled = false;
+                    lucide.createIcons();
+                }
+            };
+        }
 
         if (closeDetails) closeDetails.onclick = () => detailsModal.style.display = 'none';
         if (cancelDetails) cancelDetails.onclick = () => detailsModal.style.display = 'none';
