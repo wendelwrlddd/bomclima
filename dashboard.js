@@ -838,7 +838,11 @@ class Dashboard {
                 const cats = Array.isArray(p.categories) ? p.categories : [p.category];
                 return category === 'all' || cats.includes(category);
             });
-            this.render();
+            if (this.currentView === 'hidePrices') {
+                this.renderHidePrices();
+            } else {
+                this.render();
+            }
             return;
         }
 
@@ -866,7 +870,12 @@ class Dashboard {
             
             return matchesSearch && matchesCategory;
         });
-        this.render();
+
+        if (this.currentView === 'hidePrices') {
+            this.renderHidePrices();
+        } else {
+            this.render();
+        }
     }
 
     async handleFormSubmit(e) {
