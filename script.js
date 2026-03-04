@@ -169,7 +169,7 @@ window.placeOrder = function() {
     const productTitle = titleEl.textContent;
     const productPrice = priceEl.textContent.trim();
     const message = encodeURIComponent(`Olá! Gostaria de realizar o pedido do produto:\n📦 *${productTitle}*\n💰 Preço: ${productPrice.replace(/\s+/g, ' ')}\n\nPode me ajudar com a disponibilidade?`);
-    window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
+    window.open(`https://wa.me/5573991160807?text=${message}`, '_blank');
 };
 
 window.submitPayment = async function(event) {
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedDate) return;
         const dateStr = selectedDate.toLocaleDateString('pt-BR');
         const message = encodeURIComponent(`Olá! Gostaria de agendar uma manutenção/revisão na Bom Clima para a data: *${dateStr}*. Como podemos confirmar?`);
-        window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
+        window.open(`https://wa.me/5573991160807?text=${message}`, '_blank');
     };
 
     // Product Data (Using global products array)
@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.openChecklistWhatsApp = function() {
         const message = encodeURIComponent('Olá! Gostaria de receber o Checklist Mecânico da Bom Clima.');
-        window.open(`https://wa.me/557381203737?text=${message}`, '_blank');
+        window.open(`https://wa.me/5573991160807?text=${message}`, '_blank');
     };
 
     window.filterByEvaporador = function() {
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         message += `Total Estimado: *${document.getElementById('cart-total').textContent}*`;
         const encMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/557381203737?text=${encMessage}`, '_blank');
+        window.open(`https://wa.me/5573991160807?text=${encMessage}`, '_blank');
         syncOrderToDashboard(true);
     };
 
