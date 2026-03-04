@@ -60,6 +60,11 @@
         .waze .card-icon-wrapper { background: #CFFAFE; color: #0891B2; }
         .waze .card-action { background: #0891B2; }
         .waze .card-action:hover { background: #0e7490; }
+        .google-maps { border-color: #EA4335; }
+        .google-maps:hover { background: #FCE8E6; }
+        .google-maps .card-icon-wrapper { background: #FAD1D0; color: #EA4335; }
+        .google-maps .card-action { background: #EA4335; }
+        .google-maps .card-action:hover { background: #C5221F; }
         .scheduler .card-icon-wrapper { background: #FEF3C7; color: #D97706; }
         .card-icon-wrapper i { width: 30px; height: 30px; }
         .contact-card h3 { font-size: 1.1rem; font-weight: 700; color: #1F2937; margin: 0; }
@@ -228,6 +233,17 @@
                     <h3>Waze</h3>
                     <p>R. São Pedro, 44 - Alto Maron<br>Itabuna - BA, 45603-420</p>
                     <span class="card-action">Abrir no Waze</span>
+                </div>
+
+                <!-- GOOGLE MAPS -->
+                <div class="contact-card google-maps" 
+                     onclick="window.open('https://www.google.com/maps/search/?api=1&query=R.+São+Pedro,+44+-+Alto+Maron,+Itabuna+-+BA,+45603-420','_blank')">
+                    <div class="card-icon-wrapper">
+                        <i data-lucide="map-pin"></i>
+                    </div>
+                    <h3>Google Maps</h3>
+                    <p>R. São Pedro, 44 - Alto Maron<br>Itabuna - BA, 45603-420</p>
+                    <span class="card-action">Ver Localização</span>
                 </div>
 
                 <!-- CALENDÁRIO -->
