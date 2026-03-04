@@ -2199,3 +2199,77 @@ body {
 [data-theme="dark"] .specifications li {
     color: var(--medium-gray);
 }
+
+/* Vortex Agency Credit */
+.vortex-footer-credit {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.vortex-credit-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.vortex-credit-text span {
+    color: var(--white);
+    font-weight: 700;
+}
+
+.vortex-contact-box {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.vortex-contact-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vortex-contact-btn:hover {
+    background: var(--white);
+    color: var(--primary-blue);
+    transform: translateY(-2px);
+}
+
+.vortex-footer-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.vortex-footer-logo:hover {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .vortex-footer-credit {
+        flex-direction: column;
+        text-align: center;
+        padding: 2rem 0;
+    }
+
+    .vortex-contact-box {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
