@@ -61,9 +61,9 @@ app.get('/api/test-cors', (req, res) => {
     res.json({ message: 'CORS Manual Ativo', debug: 'suprema-v1' });
 });
 
-// Mercado Pago Configuration (Test credentials)
+// Mercado Pago Configuration
 const mpClient = new MercadoPagoConfig({
-    accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660'
+    accessToken: process.env.MP_ACCESS_TOKEN
 });
 const preference = new Preference(mpClient);
 
@@ -269,14 +269,14 @@ async function q(sql, params = []) {
     }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-bomclima-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Configuração de Múltiplos Logins Embutidos no Código
+// Configuração de Múltiplos Logins Protegidos (.env)
 const ALLOWED_USERS = [
-    { username: 'laise', password: 'bomclima1.9' },
-    { username: 'walter@99', password: 'bomclima1.9' },
-    { username: 'clecia@99', password: 'bomclima1.9' }
-];
+    { username: process.env.ADMIN_USER_1, password: process.env.ADMIN_PASSWORD_1 },
+    { username: process.env.ADMIN_USER_2, password: process.env.ADMIN_PASSWORD_2 },
+    { username: process.env.ADMIN_USER_3, password: process.env.ADMIN_PASSWORD_3 }
+].filter(u => u.username && u.password); // Só carrega se configurado no .env
 
 // Middleware de Autenticação
 function authenticateToken(req, res, next) {
