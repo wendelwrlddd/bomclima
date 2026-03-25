@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let localProducts = [];
         let apiProducts = [];
         try {
-            const response = await fetch('./products_data.json');
+            const response = await fetch('./data/products_data.json');
             if (response.ok) {
                 localProducts = await response.json();
                 processProducts(localProducts, []); 

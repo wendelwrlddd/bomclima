@@ -1,9 +1,11 @@
 // Versão: 1.1.0 - PROD-READY - [7:35 PM]
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const { MercadoPagoConfig, Preference } = require('mercadopago');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -43,19 +45,25 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.get('/', (req, res) => res.send('API Bom Clima Ativa - Versão 1.1.2'));
 app.get('/health', (req, res) => res.send('OK'));
 
-// ✅ Servir arquivos estáticos (Dashboard, JS, Imagens)
-// Importante para o Railway conseguir entregar o dashboard.js e as fotos
-const path = require('path');
-app.use(express.static('.'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Proteção estrita do backend quando servimos a raiz inteira devido à Vercel
+app.use('/backend', (req, res) => res.status(403).send('Acesso Negado'));
+app.use('/node_modules', (req, res) => res.status(403).send('Acesso Negado'));
+app.use('/package.json', (req, res) => res.status(403).send('Acesso Negado'));
+app.use('/package-lock.json', (req, res) => res.status(403).send('Acesso Negado'));
+app.use('/.env', (req, res) => res.status(403).send('Acesso Negado'));
+app.use('/database.sql', (req, res) => res.status(403).send('Acesso Negado'));
+
+// ✅ Servir arquivos estáticos (Dashboard, JS, Imagens) a partir da raiz
+app.use(express.static(path.join(__dirname, '../')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/api/test-cors', (req, res) => {
     res.json({ message: 'CORS Manual Ativo', debug: 'suprema-v1' });
 });
 
 // Mercado Pago Configuration (Test credentials)
-const mpClient = new MercadoPagoConfig({ 
-    accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660' 
+const mpClient = new MercadoPagoConfig({
+    accessToken: 'TEST-7531342776792245-022113-1bf9bd027fbf866bc599508a49240428-2205903660'
 });
 const preference = new Preference(mpClient);
 
@@ -67,25 +75,7 @@ process.on('uncaughtException', (err) => {
     console.error('❌ Exceção não capturada:', err);
 });
 
-// Fallback in-memory storage for when DB is unavailable
-let memProducts = [];
-try {
-    const fs = require('fs');
-    if (fs.existsSync('./products_data.json')) {
-        memProducts = JSON.parse(fs.readFileSync('./products_data.json', 'utf8'));
-        console.log(`✅ ${memProducts.length} produtos carregados do JSON para memória.`);
-    }
-} catch (e) {
-    console.warn('⚠️ Não foi possível carregar products_data.json na inicialização.');
-}
-let memOrders = [];
-let memHistory = [];
-try {
-    const fs = require('fs');
-    if (fs.existsSync('./history_data.json')) {
-        memHistory = JSON.parse(fs.readFileSync('./history_data.json', 'utf8'));
-    }
-} catch (e) {}
+// In-memory fallbacks removed to ensure absolute consistency via database
 
 // Connection string prioritization: 
 // 1. MYSQL_URL environment variable (Railway/Production)
@@ -175,7 +165,7 @@ async function initDB(conn) {
 
         // 2. Upgrade existing columns if needed (Garante que fotos grandes funcionem)
         const [prodCols] = await conn.execute("SHOW COLUMNS FROM products");
-        
+
         // SKU Check
         if (!prodCols.find(c => c.Field === 'sku')) {
             await conn.execute(`ALTER TABLE products ADD COLUMN sku VARCHAR(100) AFTER description`);
@@ -190,17 +180,17 @@ async function initDB(conn) {
         await conn.execute(`ALTER TABLE products MODIFY COLUMN imageName LONGTEXT`);
         await conn.execute(`ALTER TABLE products MODIFY COLUMN description LONGTEXT`);
         await conn.execute(`ALTER TABLE products MODIFY COLUMN categories LONGTEXT`);
-        
+
         // Garante que o ID seja VARCHAR para suportar UUIDs ou timestamps do front
         const idCol = prodCols.find(c => c.Field === 'id');
         if (idCol && idCol.Type.toLowerCase().includes('int')) {
-             await conn.execute(`ALTER TABLE products MODIFY COLUMN id VARCHAR(255)`);
+            await conn.execute(`ALTER TABLE products MODIFY COLUMN id VARCHAR(255)`);
         }
-        
+
         const [orderCols] = await conn.execute("SHOW COLUMNS FROM orders");
         const newCols = [
-            'cpf_cnpj VARCHAR(20)', 'email VARCHAR(255)', 'phone VARCHAR(50)', 
-            'cep VARCHAR(10)', 'street VARCHAR(255)', 'number VARCHAR(50)', 
+            'cpf_cnpj VARCHAR(20)', 'email VARCHAR(255)', 'phone VARCHAR(50)',
+            'cep VARCHAR(10)', 'street VARCHAR(255)', 'number VARCHAR(50)',
             'district VARCHAR(100)', 'city VARCHAR(100)', 'uf VARCHAR(2)',
             'payment_status VARCHAR(50)', 'invoice_status VARCHAR(50)'
         ];
@@ -217,11 +207,15 @@ async function initDB(conn) {
         const [eventCols] = await conn.execute("SHOW COLUMNS FROM events");
         const evIdCol = eventCols.find(c => c.Field === 'id');
         if (evIdCol && evIdCol.Type.toLowerCase().includes('int')) {
-             await conn.execute(`ALTER TABLE events MODIFY COLUMN id VARCHAR(255)`);
+            await conn.execute(`ALTER TABLE events MODIFY COLUMN id VARCHAR(255)`);
         }
         const evProdIdCol = eventCols.find(c => c.Field === 'productId');
         if (evProdIdCol && evProdIdCol.Type.toLowerCase().includes('int')) {
-             await conn.execute(`ALTER TABLE events MODIFY COLUMN productId VARCHAR(255)`);
+            await conn.execute(`ALTER TABLE events MODIFY COLUMN productId VARCHAR(255)`);
+        }
+        if (!eventCols.find(c => c.Field === 'user')) {
+            await conn.execute(`ALTER TABLE events ADD COLUMN user VARCHAR(100) AFTER id`);
+            console.log('✅ Coluna adicionada em events: user');
         }
 
         console.log('✅ Tabelas verificadas/atualizadas com sucesso');
@@ -232,7 +226,7 @@ async function initDB(conn) {
 
 async function getDB() {
     if (pool) return pool;
-    
+
     if (!MYSQL_URL) {
         console.warn('⚠️ Impossível conectar: MYSQL_URL não definida.');
         return null;
@@ -247,13 +241,13 @@ async function getDB() {
             enableKeepAlive: true,
             keepAliveInitialDelay: 0
         });
-        
+
         // Test connection
         const conn = await pool.getConnection();
         console.log('✅ Conectado ao MySQL Pool');
         await initDB(conn);
         conn.release();
-        
+
         return pool;
     } catch (err) {
         console.error('❌ Erro fatal ao configurar Pool de Banco:', err.message);
@@ -275,20 +269,68 @@ async function q(sql, params = []) {
     }
 }
 
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-bomclima-2026';
+
+// Configuração de Múltiplos Logins Embutidos no Código
+const ALLOWED_USERS = [
+    { username: 'laise', password: 'bomclima1.9' },
+    { username: 'walter@99', password: 'bomclima1.9' },
+    { username: 'clecia@99', password: 'bomclima1.9' }
+];
+
+// Middleware de Autenticação
+function authenticateToken(req, res, next) {
+    // Permitir OPTIONS sem token para o Preflight do CORS
+    if (req.method === 'OPTIONS') return next();
+
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Acesso negado. Token não fornecido.' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ success: false, error: 'Sessão inválida ou expirada.' });
+        req.user = user;
+        next();
+    });
+}
+
+// Rotas de Autenticação
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Procura no array de credenciais se existe algum match
+    const userFound = ALLOWED_USERS.find(u => u.username === username && u.password === password);
+
+    if (userFound) {
+        const user = { name: username };
+        const accessToken = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token: accessToken, username: username });
+    } else {
+        res.status(401).json({ success: false, error: 'Credenciais inválidas' });
+    }
+});
+
+app.get('/api/verify', authenticateToken, (req, res) => {
+    res.json({ success: true, user: req.user });
+});
+
 // Routes — Products
 app.get('/api/products', async (req, res) => {
     try {
         const [rows] = await q('SELECT * FROM products ORDER BY id DESC');
         res.json(rows);
     } catch (err) {
-        console.warn('⚠️ Usando fallback de memória para GET /api/products');
-        res.json(memProducts);
+        console.error('Erro em GET /api/products:', err);
+        res.status(500).json({ error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', authenticateToken, async (req, res) => {
     const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice } = req.body;
-    
+
     // Convert undefined to null to prevent mysql2 crash
     const safeNull = val => val === undefined ? null : val;
     const nameVal = safeNull(name);
@@ -309,7 +351,7 @@ app.post('/api/products', async (req, res) => {
                 'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=?, hidePrice=? WHERE id=?',
                 [nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal, id.toString()]
             );
-            
+
             if (result && result.affectedRows === 0) {
                 // Produto existe no JSON estático, mas ainda não estava no BD!
                 await q(
@@ -328,37 +370,12 @@ app.post('/api/products', async (req, res) => {
             res.json({ success: true, message: 'Produto criado no Banco', id: newId });
         }
     } catch (err) {
-        console.error('❌ Erro real ao salvar no Banco:', err);
-        console.warn('⚠️ Fallback acionado: POST /api/products');
-        
-        const productToSave = { ...req.body };
-        if (!productToSave.id) productToSave.id = Date.now().toString();
-        else productToSave.id = productToSave.id.toString();
-
-        const index = memProducts.findIndex(p => p.id.toString() === productToSave.id);
-        if (index !== -1) {
-            memProducts[index] = { ...memProducts[index], ...productToSave };
-        } else {
-            memProducts.push(productToSave);
-        }
-        // Persistência em arquivo para modo Offline
-        saveMemProducts();
-        res.json({ success: true, message: 'Salvo em memória e arquivo (DB offline)', id: productToSave.id });
+        console.error('❌ Erro ao salvar no Banco:', err);
+        res.status(500).json({ success: false, error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-// Helper: Salvar produtos em arquivo quando o DB está offline
-function saveMemProducts() {
-    try {
-        const fs = require('fs');
-        fs.writeFileSync('./products_data.json', JSON.stringify(memProducts, null, 2));
-        console.log('✅ products_data.json atualizado com sucesso.');
-    } catch (e) {
-        console.error('❌ Erro ao salvar products_data.json:', e);
-    }
-}
-
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticateToken, async (req, res) => {
     try {
         await q('DELETE FROM products WHERE id = ?', [req.params.id]);
         res.json({ success: true, message: 'Produto removido' });
@@ -369,13 +386,13 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 // Batch update hidePrice API endpoint
-app.post('/api/products/hide-prices', async (req, res) => {
+app.post('/api/products/hide-prices', authenticateToken, async (req, res) => {
     const { updates } = req.body;
     // expect updates to be an array of { id, hidePrice }
     if (!Array.isArray(updates)) {
         return res.status(400).json({ error: 'Formato inválido. `updates` deve ser um array.' });
     }
-    
+
     try {
         for (const update of updates) {
             const hpVal = update.hidePrice ? 1 : 0;
@@ -384,89 +401,58 @@ app.post('/api/products/hide-prices', async (req, res) => {
         }
         res.json({ success: true, message: 'Status de preço oculto atualizados no Banco' });
     } catch (err) {
-        console.error('❌ Erro real ao atualizar hidePrices no Banco:', err);
-        console.warn('⚠️ Fallback acionado: POST /api/products/hide-prices');
-        
-        for (const update of updates) {
-            const index = memProducts.findIndex(p => p.id.toString() === update.id.toString());
-            if (index !== -1) {
-                memProducts[index].hidePrice = update.hidePrice ? 1 : 0;
-            }
-        }
-        saveMemProducts();
-        res.json({ success: true, message: 'Alterações salvas em memória (DB offline)' });
+        console.error('❌ Erro ao atualizar hidePrices no Banco:', err);
+        res.status(500).json({ success: false, error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
 // Routes — History/Events
-app.get('/api/history', async (req, res) => {
+app.get('/api/history', authenticateToken, async (req, res) => {
     try {
         const [rows] = await q('SELECT * FROM events ORDER BY timestamp DESC LIMIT 100');
         res.json(rows);
     } catch (err) {
-        console.warn('⚠️ Usando fallback de memória para GET /api/history');
-        res.json(memHistory);
+        console.error('Erro em GET /api/history:', err);
+        res.status(500).json({ error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-app.post('/api/history', async (req, res) => {
+app.post('/api/history', authenticateToken, async (req, res) => {
     const { id, type, productName, productId, details } = req.body;
+    const user = req.user ? (req.user.name || req.user.user) : 'Sistema';
     try {
         await q(
-            'INSERT INTO events (id, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
-            [id || Date.now().toString(), type, productName, productId, details, new Date().toISOString().slice(0, 19).replace('T', ' ')]
+            'INSERT INTO events (id, user, type, productName, productId, details, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id || Date.now().toString(), user, type, productName, productId, details, new Date().toISOString().slice(0, 19).replace('T', ' ')]
         );
         res.json({ success: true });
     } catch (err) {
-        console.warn('⚠️ Salvando em memória: POST /api/history');
-        const eventWithId = { ...req.body, id: Date.now(), timestamp: new Date().toISOString() };
-        memHistory.unshift(eventWithId);
-        if (memHistory.length > 100) memHistory.pop();
-        saveMemHistory();
-        res.json({ success: true, message: 'Histórico salvo em memória (DB offline)' });
+        console.error('Erro ao salvar em POST /api/history:', err);
+        res.status(500).json({ success: false, error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-// Helper: Salvar histórico em arquivo quando o DB está offline
-function saveMemHistory() {
-    try {
-        const fs = require('fs');
-        fs.writeFileSync('./history_data.json', JSON.stringify(memHistory, null, 2));
-    } catch (e) {}
-}
-
 // Routes — Orders
-app.get('/api/orders', async (req, res) => {
+app.get('/api/orders', authenticateToken, async (req, res) => {
     try {
         const [rows] = await q('SELECT * FROM orders ORDER BY lastUpdate DESC');
         res.json(rows);
     } catch (err) {
-        console.warn('⚠️ Usando fallback de memória para GET /api/orders');
-        res.json(memOrders);
+        console.error('Erro em GET /api/orders:', err);
+        res.status(500).json({ error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
-
-// Helper: Salvar pedidos em arquivo quando o DB está offline
-function saveMemOrders() {
-    try {
-        const fs = require('fs');
-        fs.writeFileSync('./orders_data.json', JSON.stringify(memOrders, null, 2));
-        console.log('✅ orders_data.json atualizado com sucesso.');
-    } catch (e) {
-        console.error('❌ Erro ao salvar orders_data.json:', e);
-    }
-}
 
 app.post('/api/orders', async (req, res) => {
     const orderDataReceived = req.body;
     console.log('📦 Novo pedido recebido:', JSON.stringify(orderDataReceived, null, 2));
 
-    const { 
+    const {
         id, customer, whatsapp, items, total, status,
         cpf_cnpj, email, phone, cep, street, number, district, city, uf,
-        payment_status, invoice_status 
+        payment_status, invoice_status
     } = orderDataReceived;
-    
+
     // Clean total string to decimal safely
     let cleanTotal = 0;
     if (total) {
@@ -500,19 +486,12 @@ app.post('/api/orders', async (req, res) => {
         );
         res.json({ success: true });
     } catch (err) {
-        console.warn('⚠️ Salvando em memória: POST /api/orders');
-        const idx = memOrders.findIndex(o => o.id == id);
-        if (idx !== -1) {
-            memOrders[idx] = { ...memOrders[idx], ...orderDataReceived, lastUpdate: new Date().toISOString() };
-        } else {
-            memOrders.push({ ...orderDataReceived, lastUpdate: new Date().toISOString() });
-        }
-        saveMemOrders();
-        res.json({ success: true, message: 'Salvo em memória (DB offline)' });
+        console.error('❌ Erro no banco ao salvar POST /api/orders:', err);
+        res.status(500).json({ success: false, error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-app.put('/api/orders/:id/status', async (req, res) => {
+app.put('/api/orders/:id/status', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { status, payment_status } = req.body;
     try {
@@ -522,32 +501,20 @@ app.put('/api/orders/:id/status', async (req, res) => {
         );
         res.json({ success: true, message: 'Status do pedido atualizado' });
     } catch (err) {
-        console.warn('⚠️ Atualizando status em memória para pedido:', id);
-        const idx = memOrders.findIndex(o => o.id == id);
-        if (idx !== -1) {
-            memOrders[idx].status = status || 'paid';
-            memOrders[idx].payment_status = payment_status || 'paid';
-            memOrders[idx].lastUpdate = new Date().toISOString();
-            res.json({ success: true, message: 'Status atualizado em memória' });
-        } else {
-            res.status(404).json({ error: 'Pedido não encontrado para atualização de status' });
-        }
+        console.error('❌ Erro no banco ao atualizar PUT /api/orders/:id/status:', err);
+        res.status(500).json({ success: false, error: 'Serviço de Banco de Dados Indisponível' });
     }
 });
 
-app.post('/api/invoices', async (req, res) => {
+app.post('/api/invoices', authenticateToken, async (req, res) => {
     const { orderId } = req.body;
     try {
         let order;
-        try {
-            const [rows] = await q('SELECT * FROM orders WHERE id = ?', [orderId]);
-            if (rows.length > 0) order = rows[0];
-        } catch (dbErr) {
-            order = memOrders.find(o => o.id == orderId);
-        }
+        const [rows] = await q('SELECT * FROM orders WHERE id = ?', [orderId]);
+        if (rows.length > 0) order = rows[0];
 
         if (!order) return res.status(404).json({ error: 'Pedido não encontrado' });
-        
+
         const emitter = {
             cnpj: "12345678000195",
             razao_social: "BOM CLIMA AR CONDICIONADO LTDA",
@@ -577,12 +544,7 @@ app.post('/api/invoices', async (req, res) => {
         };
 
         // Update order status
-        try {
-            await q('UPDATE orders SET invoice_status = ? WHERE id = ?', ['issued', orderId]);
-        } catch (dbErr) {
-            const idx = memOrders.findIndex(o => o.id == orderId);
-            if (idx !== -1) memOrders[idx].invoice_status = 'issued';
-        }
+        await q('UPDATE orders SET invoice_status = ? WHERE id = ?', ['issued', orderId]);
 
         res.json({ success: true, invoice: invoiceData });
     } catch (err) {
@@ -594,7 +556,7 @@ app.post('/api/invoices', async (req, res) => {
 app.post('/api/create-preference', async (req, res) => {
     try {
         const { id, items, customer, cpf_cnpj, email, status } = req.body;
-        
+
         // Use Origin header, Referer, or fallback to the current request's host
         let host = req.headers.origin;
         if (!host && req.headers.referer) {
@@ -606,7 +568,7 @@ app.post('/api/create-preference', async (req, res) => {
             }
         }
         if (!host) host = 'http://localhost:5173';
-        
+
         const body = {
             items: items.map(item => {
                 // Handle Brazilian price format: R$ 1.234,56 -> 1234.56
@@ -645,7 +607,7 @@ app.post('/api/create-preference', async (req, res) => {
     }
 });
 
-app.delete('/api/orders/:id', async (req, res) => {
+app.delete('/api/orders/:id', authenticateToken, async (req, res) => {
     try {
         await q('DELETE FROM orders WHERE id = ?', [req.params.id]);
         res.json({ success: true });
