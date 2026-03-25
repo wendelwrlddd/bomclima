@@ -400,8 +400,12 @@ class Dashboard {
     }
 
     async logEvent(type, product, details = '') {
+        const session = JSON.parse(localStorage.getItem('bomclima_auth_session')) || {};
+        const userName = session.username || 'Sistema';
+
         const event = {
             id: Date.now(),
+            user: userName,
             type,
             productName: product.name,
             productId: product.id,
