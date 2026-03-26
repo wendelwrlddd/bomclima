@@ -1,7 +1,7 @@
 
-import { calculateStockTotalValue, formatCurrency } from './utils-stats.js?v=4';
+import { calculateStockTotalValue, formatCurrency, calculateStockCostValue } from './utils-stats.js?v=5';
 
-console.log('Dashboard JS carregado v4');
+console.log('Dashboard JS carregado v5');
 
 const FULL_CATEGORIES = [
     "Sem categoria", "BOBINA MAGUINETICA P/C TM15/TM16 24", "Bobina para compressor", "Caixa de teto",
@@ -204,32 +204,40 @@ class Dashboard {
         const navHistory = document.getElementById('navHistory');
         const navOrders = document.getElementById('navOrders');
         const navHidePrices = document.getElementById('navHidePrices');
+        const navCostPrices = document.getElementById('navCostPrices');
         const dashboardView = document.getElementById('dashboardView');
         const historyView = document.getElementById('historyView');
         const ordersView = document.getElementById('ordersView');
         const hidePricesView = document.getElementById('hidePricesView');
+        const costPricesView = document.getElementById('costPricesView');
 
         if (navDashboard && navHistory && navOrders) {
             navDashboard.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('dashboard', [navDashboard], [navHistory, navOrders, navHidePrices], [dashboardView], [historyView, ordersView, hidePricesView]);
+                this.switchView('dashboard', [navDashboard], [navHistory, navOrders, navHidePrices, navCostPrices], [dashboardView], [historyView, ordersView, hidePricesView, costPricesView]);
             };
 
             navHistory.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('history', [navHistory], [navDashboard, navOrders, navHidePrices], [historyView], [dashboardView, ordersView, hidePricesView]);
+                this.switchView('history', [navHistory], [navDashboard, navOrders, navHidePrices, navCostPrices], [historyView], [dashboardView, ordersView, hidePricesView, costPricesView]);
             };
 
             navOrders.onclick = (e) => {
                 e.preventDefault();
-                this.switchView('orders', [navOrders], [navDashboard, navHistory, navHidePrices], [ordersView], [dashboardView, historyView, hidePricesView]);
+                this.switchView('orders', [navOrders], [navDashboard, navHistory, navHidePrices, navCostPrices], [ordersView], [dashboardView, historyView, hidePricesView, costPricesView]);
                 document.getElementById('orderBadge').style.display = 'none';
             };
 
             if (navHidePrices) {
                 navHidePrices.onclick = (e) => {
                     e.preventDefault();
-                    this.switchView('hidePrices', [navHidePrices], [navDashboard, navHistory, navOrders], [hidePricesView], [dashboardView, historyView, ordersView]);
+                    this.switchView('hidePrices', [navHidePrices], [navDashboard, navHistory, navOrders, navCostPrices], [hidePricesView], [dashboardView, historyView, ordersView, costPricesView]);
+                };
+            }
+            if (navCostPrices) {
+                navCostPrices.onclick = (e) => {
+                    e.preventDefault();
+                    this.switchView('costPrices', [navCostPrices], [navDashboard, navHistory, navOrders, navHidePrices], [costPricesView], [dashboardView, historyView, ordersView, hidePricesView]);
                 };
             }
         }
@@ -255,6 +263,7 @@ class Dashboard {
         if (view === 'history') this.renderHistory();
         if (view === 'orders') this.renderOrders();
         if (view === 'hidePrices') this.renderHidePrices();
+        if (view === 'costPrices') this.renderCostPrices();
     }
 
     handleOrderNotification() {
@@ -507,6 +516,64 @@ class Dashboard {
                     </td>
                     <td style="padding: 1rem 0.75rem; color: #94a3b8; font-size: 0.75rem;">
                         ${this.formatDate(p.date)}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    renderCostPrices() {
+        if (this.currentView !== 'costPrices') return;
+
+        const tableBody = document.getElementById('costPricesTableBody');
+        if (!tableBody) return;
+
+        const parseP = (val) => {
+            if (!val) return 0;
+            let str = val.toString().trim();
+            if (str.includes(',')) str = str.replace(/[^\d,]/g, '').replace(',', '.');
+            else str = str.replace(/[^\d.]/g, '');
+            return parseFloat(str) || 0;
+        };
+
+        const sortedProducts = [...this.filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
+
+        tableBody.innerHTML = sortedProducts.map(p => {
+            const costVal = parseP(p.costPrice);
+            const priceVal = parseP(p.promoPrice && p.promoPrice !== '0,00' ? p.promoPrice : p.price);
+            const profit = priceVal - costVal;
+
+            const isMissingCost = costVal <= 0;
+
+            // Lógica de cores baseada na falta de preço de custo
+            const rowStyle = isMissingCost ? 'background: rgba(249, 115, 22, 0.05); border-left: 3px solid #f97316;' : '';
+            const costDisplay = costVal > 0 ? formatCurrency(costVal) : '<span style="color: #f97316; font-size: 0.8rem; font-weight: bold;">Pendente</span>';
+            const profitDisplay = costVal > 0 ? `<span style="color: ${profit > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">${formatCurrency(profit)}</span>` : '-';
+
+            return `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-all" style="${rowStyle}">
+                    <td style="padding: 1rem 0.75rem;">
+                        <div class="product-img-thumb" style="display: flex; align-items: center; justify-content: center; color: #64748b; width: 40px; height: 40px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,0.05);">
+                            ${p.imageName ? `
+                                <img src="${p.imageName.startsWith('data:image') ? p.imageName : `./uploads/${p.imageName}`}" 
+                                onerror="this.parentElement.innerHTML='<i data-lucide=\\'image\\' class=\\'w-4 h-4\\'></i>'; lucide.createIcons();" 
+                                style="width: 100%; height: 100%; object-fit: cover;">` : `
+                                <i data-lucide="image" class="w-4 h-4"></i>`}
+                        </div>
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        <span style="font-weight: 600;">${p.name}</span>
+                        ${p.sku ? `<br><code style="color: #94a3b8; font-size: 0.75rem;">${p.sku}</code>` : ''}
+                    </td>
+                    <td style="padding: 1rem 0.75rem; font-weight: 600;">
+                        ${costDisplay}
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        ${formatCurrency(priceVal)}
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        ${profitDisplay}
                     </td>
                 </tr>
             `;
@@ -851,6 +918,8 @@ class Dashboard {
             });
             if (this.currentView === 'hidePrices') {
                 this.renderHidePrices();
+            } else if (this.currentView === 'costPrices') {
+                this.renderCostPrices();
             } else {
                 this.render();
             }
@@ -884,6 +953,8 @@ class Dashboard {
 
         if (this.currentView === 'hidePrices') {
             this.renderHidePrices();
+        } else if (this.currentView === 'costPrices') {
+            this.renderCostPrices();
         } else {
             this.render();
         }
@@ -895,6 +966,7 @@ class Dashboard {
         const category = document.getElementById('category').value;
         const price = document.getElementById('price').value;
         const promoPrice = document.getElementById('promoPrice').value;
+        const costPrice = document.getElementById('costPrice').value;
         const stock = parseInt(document.getElementById('modalStock').value) || 0;
         const onBackorder = document.getElementById('onBackorder').checked;
         const imageName = document.getElementById('imageName').value;
@@ -907,6 +979,7 @@ class Dashboard {
             categories: [category],
             sku,
             price,
+            costPrice,
             promoPrice: promoPrice && promoPrice.trim() !== '' ? promoPrice : '',
             stock,
             stockStatus: onBackorder ? 'onbackorder' : (stock > 0 ? 'instock' : 'outofstock'),
@@ -972,6 +1045,7 @@ class Dashboard {
         document.getElementById('name').value = p.name;
         document.getElementById('category').value = Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Sem categoria');
         document.getElementById('price').value = p.price.replace('R$', '').replace(/\s/g, '').trim();
+        document.getElementById('costPrice').value = (p.costPrice || '').replace('R$', '').replace(/\s/g, '').trim();
         document.getElementById('promoPrice').value = (p.promoPrice || '').replace('R$', '').replace(/\s/g, '').trim();
         document.getElementById('modalStock').value = p.stock || 0;
         document.getElementById('onBackorder').checked = p.stockStatus === 'onbackorder';
@@ -1001,6 +1075,8 @@ class Dashboard {
             document.getElementById('viewPromo').value = '';
         }
 
+        document.getElementById('viewCostPrice').value = (p.costPrice || '').replace('R$', '').trim();
+
         document.getElementById('viewDescription').value = p.description || '';
 
         const cat = Array.isArray(p.categories) ? p.categories[0] : (p.category || 'Sem categoria');
@@ -1022,16 +1098,19 @@ class Dashboard {
 
         const porVal = document.getElementById('viewPrice').value.replace('R$', '').trim();
         const deVal = document.getElementById('viewPromo').value.replace('R$', '').trim();
+        const costVal = document.getElementById('viewCostPrice').value.replace('R$', '').trim();
 
         // Logic: if deVal (Original) is empty, then price = porVal and promo = empty.
         // If deVal exists, then price = deVal and promoPrice = porVal.
         const finalPrice = deVal ? `R$ ${deVal}` : `R$ ${porVal}`;
         const finalPromo = deVal ? `R$ ${porVal}` : '';
+        const finalCost = costVal ? `R$ ${costVal}` : '';
 
         const productData = {
             ...p,
             name: document.getElementById('viewName').value,
             price: finalPrice,
+            costPrice: finalCost,
             promoPrice: finalPromo && finalPromo.trim() !== '' ? finalPromo : '',
             description: document.getElementById('viewDescription').value,
             imageName: document.getElementById('viewMainImage').src.startsWith('data:image') ? document.getElementById('viewMainImage').src : p.imageName
@@ -1127,6 +1206,22 @@ class Dashboard {
         const stockEl = document.getElementById('stockTotalValue');
         if (stockEl) {
             stockEl.textContent = formatCurrency(totalValue);
+        }
+
+        const costStats = calculateStockCostValue(this.products);
+        const costEl = document.getElementById('stockCostValue');
+        if (costEl) {
+            costEl.textContent = formatCurrency(costStats.totalCostValue);
+        }
+
+        const costWarningIcon = document.getElementById('costWarningIcon');
+        if (costWarningIcon) {
+            if (costStats.missingCostPriceCount > 0) {
+                costWarningIcon.style.display = 'inline-flex';
+                costWarningIcon.title = `Ainda falta ${costStats.missingCostPriceCount} produtos para efetuar o cálculo correto`;
+            } else {
+                costWarningIcon.style.display = 'none';
+            }
         }
 
         if (document.getElementById('totalCategories')) {

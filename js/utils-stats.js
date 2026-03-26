@@ -34,7 +34,7 @@ export const calculateStockTotalValue = (products) => {
         // 1. Normalizar Estoque
         let stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
         const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
-        
+
         // 2. Normalizar Status
         const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
         const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
@@ -48,7 +48,7 @@ export const calculateStockTotalValue = (products) => {
         const price = parsePrice(p.price);
         const promo = parsePrice(p.promoPrice);
         let finalPrice = (promo > 0) ? promo : price;
-        
+
         if (finalPrice > 0) {
             totalValue += (qty * finalPrice);
         }
@@ -63,10 +63,45 @@ export const calculateStockTotalValue = (products) => {
  * @returns {string}
  */
 export const formatCurrency = (value) => {
-    return value.toLocaleString('pt-BR', { 
-        style: 'currency', 
+    return value.toLocaleString('pt-BR', {
+        style: 'currency',
         currency: 'BRL',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
+};
+
+/**
+ * Calcula o valor total de custo baseando-se em produtos com preco de custo definido.
+ * Retorna o valor e a quantidade de produtos sem preco de custo.
+ */
+export const calculateStockCostValue = (products) => {
+    let totalCostValue = 0;
+    let missingCostPriceCount = 0;
+
+    products.forEach(p => {
+        // 1. Normalizar Estoque
+        let stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
+        const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
+
+        // 2. Normalizar Status
+        const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
+        const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
+
+        // 3. Filtros
+        if (stockStatus !== 'instock') return;
+        if (qty <= 0) return;
+        if (publishStatus !== 'publish') return;
+
+        // 4. Calcular Custo Total
+        const costPrice = parsePrice(p.costPrice);
+
+        if (costPrice > 0) {
+            totalCostValue += (qty * costPrice);
+        } else {
+            missingCostPriceCount++;
+        }
+    });
+
+    return { totalCostValue, missingCostPriceCount };
 };

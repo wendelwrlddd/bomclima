@@ -118,6 +118,7 @@ async function initDB(conn) {
                 name VARCHAR(255) NOT NULL,
                 categories LONGTEXT, -- Mudado para LONGTEXT
                 price VARCHAR(100),
+                costPrice VARCHAR(100),
                 promoPrice VARCHAR(100),
                 stock INT DEFAULT 0,
                 stockStatus VARCHAR(100),
@@ -174,6 +175,12 @@ async function initDB(conn) {
         // HidePrice Check
         if (!prodCols.find(c => c.Field === 'hidePrice')) {
             await conn.execute(`ALTER TABLE products ADD COLUMN hidePrice TINYINT(1) DEFAULT 0 AFTER sku`);
+        }
+
+        // CostPrice Check
+        if (!prodCols.find(c => c.Field === 'costPrice')) {
+            await conn.execute(`ALTER TABLE products ADD COLUMN costPrice VARCHAR(100) AFTER price`);
+            console.log('✅ Coluna adicionada em products: costPrice');
         }
 
         // Force LONGTEXT for images and descriptions (MUITO IMPORTANTE)
@@ -329,13 +336,14 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', authenticateToken, async (req, res) => {
-    const { id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice } = req.body;
+    const { id, name, categories, price, costPrice, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice } = req.body;
 
     // Convert undefined to null to prevent mysql2 crash
     const safeNull = val => val === undefined ? null : val;
     const nameVal = safeNull(name);
     const catsVal = categories ? JSON.stringify(categories) : null;
     const priceVal = safeNull(price);
+    const costPriceVal = safeNull(costPrice);
     const promoVal = safeNull(promoPrice);
     const stockVal = stock || 0;
     const ssVal = safeNull(stockStatus);
@@ -348,15 +356,15 @@ app.post('/api/products', authenticateToken, async (req, res) => {
         if (id) {
             // Se já tem ID, tenta atualizar
             const [result] = await q(
-                'UPDATE products SET name=?, categories=?, price=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=?, hidePrice=? WHERE id=?',
-                [nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal, id.toString()]
+                'UPDATE products SET name=?, categories=?, price=?, costPrice=?, promoPrice=?, stock=?, stockStatus=?, imageName=?, description=?, sku=?, hidePrice=? WHERE id=?',
+                [nameVal, catsVal, priceVal, costPriceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal, id.toString()]
             );
 
             if (result && result.affectedRows === 0) {
                 // Produto existe no JSON estático, mas ainda não estava no BD!
                 await q(
-                    'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [id.toString(), nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
+                    'INSERT INTO products (id, name, categories, price, costPrice, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [id.toString(), nameVal, catsVal, priceVal, costPriceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
                 );
             }
             res.json({ success: true, message: 'Produto atualizado no Banco', id: id.toString() });
@@ -364,8 +372,8 @@ app.post('/api/products', authenticateToken, async (req, res) => {
             // Se não tem ID, cria um novo
             const newId = Date.now().toString();
             await q(
-                'INSERT INTO products (id, name, categories, price, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [newId, nameVal, catsVal, priceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
+                'INSERT INTO products (id, name, categories, price, costPrice, promoPrice, stock, stockStatus, imageName, description, sku, hidePrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [newId, nameVal, catsVal, priceVal, costPriceVal, promoVal, stockVal, ssVal, imgVal, descVal, skuVal, hpVal]
             );
             res.json({ success: true, message: 'Produto criado no Banco', id: newId });
         }
