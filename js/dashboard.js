@@ -682,7 +682,7 @@ class Dashboard {
         const closeBtn = document.getElementById('closeModal');
         const form = document.getElementById('productForm');
         const searchInput = document.getElementById('productSearch');
-        const syncBtn = document.getElementById('syncData');
+
         const imageFile = document.getElementById('imageFile');
 
         // Theme Toggle Logic
@@ -712,11 +712,7 @@ class Dashboard {
             };
         }
 
-        if (syncBtn) syncBtn.onclick = async () => {
-            if (confirm('Deseja sincronizar os dados?')) {
-                location.reload();
-            }
-        };
+
 
         if (openBtn) openBtn.onclick = () => {
             this.clearForm();
