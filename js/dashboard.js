@@ -553,6 +553,11 @@ class Dashboard {
 
             return `
                 <tr class="border-b border-white/5 hover:bg-white/5 transition-all" style="${rowStyle}">
+                    <td style="padding: 1rem 0.75rem; text-align: center;">
+                         <button class="action-btn" onclick="dashboard.editProduct(${p.id})" title="Editar Preço de Custo">
+                            <i data-lucide="edit-3" style="width: 16px; height: 16px; color: #fb923c;"></i>
+                        </button>
+                    </td>
                     <td style="padding: 1rem 0.75rem;">
                         <div class="product-img-thumb" style="display: flex; align-items: center; justify-content: center; color: #64748b; width: 40px; height: 40px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,0.05);">
                             ${p.imageName ? `
