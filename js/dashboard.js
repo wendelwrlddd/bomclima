@@ -537,7 +537,16 @@ class Dashboard {
             return parseFloat(str) || 0;
         };
 
-        const sortedProducts = [...this.filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedProducts = [...this.filteredProducts]
+            .filter(p => {
+                const stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
+                const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
+                const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
+                const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
+
+                return stockStatus === 'instock' && qty > 0 && publishStatus === 'publish';
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
 
         tableBody.innerHTML = sortedProducts.map(p => {
             const costVal = parseP(p.costPrice);

@@ -39,9 +39,8 @@ export const calculateStockTotalValue = (products) => {
         const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
         const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
 
-        // 3. Filtros Rigorosos (Considera 'instock' ou 'onbackorder' se houver estoque físico)
-        const isAvailable = (stockStatus === 'instock' || stockStatus === 'onbackorder');
-        if (!isAvailable) return;
+        // 3. Filtros Rigorosos (Apenas 'instock' com estoque físico)
+        if (stockStatus !== 'instock') return;
         if (qty <= 0) return;
         if (publishStatus !== 'publish') return;
 
@@ -89,9 +88,8 @@ export const calculateStockCostValue = (products) => {
         const stockStatus = (p.stockStatus || '').toString().trim().toLowerCase();
         const publishStatus = (p.status || 'publish').toString().trim().toLowerCase();
 
-        // 3. Filtros (Considera 'instock' ou 'onbackorder' se houver estoque físico)
-        const isAvailable = (stockStatus === 'instock' || stockStatus === 'onbackorder');
-        if (!isAvailable) return;
+        // 3. Filtros (Apenas 'instock' com estoque físico)
+        if (stockStatus !== 'instock') return;
         if (qty <= 0) return;
         if (publishStatus !== 'publish') return;
 
