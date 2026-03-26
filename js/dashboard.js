@@ -551,14 +551,19 @@ class Dashboard {
         tableBody.innerHTML = sortedProducts.map(p => {
             const costVal = parseP(p.costPrice);
             const priceVal = parseP(p.promoPrice && p.promoPrice !== '0,00' ? p.promoPrice : p.price);
-            const profit = priceVal - costVal;
+            const unitProfit = priceVal - costVal;
+
+            const stockRaw = (p.stock !== undefined && p.stock !== null) ? p.stock.toString() : '0';
+            const qty = parseInt(stockRaw.replace(/[^\d]/g, ''), 10) || 0;
+            const totalProfit = unitProfit * qty;
 
             const isMissingCost = costVal <= 0;
 
             // Lógica de cores baseada na falta de preço de custo
             const rowStyle = isMissingCost ? 'background: rgba(249, 115, 22, 0.05); border-left: 3px solid #f97316;' : '';
             const costDisplay = costVal > 0 ? formatCurrency(costVal) : '<span style="color: #f97316; font-size: 0.8rem; font-weight: bold;">Pendente</span>';
-            const profitDisplay = costVal > 0 ? `<span style="color: ${profit > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">${formatCurrency(profit)}</span>` : '-';
+            const unitProfitDisplay = costVal > 0 ? `<span style="color: ${unitProfit > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">${formatCurrency(unitProfit)}</span>` : '-';
+            const totalProfitDisplay = costVal > 0 ? `<span style="color: ${totalProfit > 0 ? '#10b981' : '#ef4444'}; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px;">${formatCurrency(totalProfit)}</span>` : '-';
 
             return `
                 <tr class="border-b border-white/5 hover:bg-white/5 transition-all" style="${rowStyle}">
@@ -580,14 +585,20 @@ class Dashboard {
                         <span style="font-weight: 600;">${p.name}</span>
                         ${p.sku ? `<br><code style="color: #94a3b8; font-size: 0.75rem;">${p.sku}</code>` : ''}
                     </td>
-                    <td style="padding: 1rem 0.75rem; font-weight: 600;">
+                    <td style="padding: 1rem 0.75rem;">
                         ${costDisplay}
                     </td>
                     <td style="padding: 1rem 0.75rem;">
                         ${formatCurrency(priceVal)}
                     </td>
+                    <td style="padding: 1rem 0.75rem; text-align: center; font-weight: 600;">
+                        ${qty}
+                    </td>
                     <td style="padding: 1rem 0.75rem;">
-                        ${profitDisplay}
+                        ${unitProfitDisplay}
+                    </td>
+                    <td style="padding: 1rem 0.75rem;">
+                        ${totalProfitDisplay}
                     </td>
                 </tr>
             `;
