@@ -10,32 +10,38 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ SOLUÇÃO SUPREMA - MANIPULAÇÃO MANUAL DE HEADERS (Fim do erro de rede)
+// ✅ CONFIGURAÇÃO DE CORS ROBUSTA
+const allowedOrigins = [
+    'https://bomclima.top',
+    'https://www.bomclima.top',
+    'https://bomclima-itabuna.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitir requests sem origin (como apps mobile ou curl)
+        if (!origin) return callback(null, true);
+
+        const isAllowed = allowedOrigins.includes(origin) || origin.includes('bomclima.top');
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.warn(`🛑 CORS bloqueado para origem: ${origin}`);
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
+// Debug header opcional
 app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowed = [
-        'https://bomclima.top',
-        'https://www.bomclima.top',
-        'https://bomclima-itabuna.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173'
-    ];
-
-    if (allowed.includes(origin) || (origin && origin.includes('bomclima.top'))) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    } else if (!origin) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('X-Debug-Version', 'suprema-v1');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).send();
-    }
+    res.setHeader('X-Debug-Version', 'suprema-v2');
     next();
 });
 
