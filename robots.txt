@@ -1,3 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard.html
+Disallow: /login.html
+Disallow: /obrigado.html
+Disallow: /backend/
+Disallow: /node_modules/
+
 Sitemap: https://www.bom-clima.top/sitemap.xml
