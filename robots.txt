@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://bomclima-itabuna.vercel.app/sitemap.xml
+Sitemap: https://www.bom-clima.top/sitemap.xml

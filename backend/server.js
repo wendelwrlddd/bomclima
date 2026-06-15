@@ -14,6 +14,8 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
     'https://bomclima.top',
     'https://www.bomclima.top',
+    'https://bom-clima.top',
+    'https://www.bom-clima.top',
     'https://bomclima-itabuna.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
@@ -25,7 +27,7 @@ app.use(cors({
         // Permitir requests sem origin (como apps mobile ou curl)
         if (!origin) return callback(null, true);
 
-        const isAllowed = allowedOrigins.includes(origin) || origin.includes('bomclima.top');
+        const isAllowed = allowedOrigins.includes(origin) || origin.includes('bomclima.top') || origin.includes('bom-clima.top');
         if (isAllowed) {
             callback(null, true);
         } else {
